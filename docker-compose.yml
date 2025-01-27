@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  php:
+    image: php:8.1-apache
+    container_name: php-container
+    ports:
+      - "8080:80"
+    volumes:
+      - ./app:/var/www/html
+    depends_on:
+      - mysql
+    command: >
+      sh -c "docker-php-ext-install mysqli && docker-php-ext-enable mysqli && apache2-foreground"
+
+
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-container
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: novelists_db
+      MYSQL_USER: a
+      MYSQL_PASSWORD: a
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin-container
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: a
+      MYSQL_ROOT_PASSWORD: a
+    depends_on:
+      - mysql
+
+
+volumes:
+  mysql-data:
