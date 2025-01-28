@@ -3,7 +3,8 @@ session_start();
 
 if (!isset($_SESSION['user_id'])) {
     // Redirect to login if not authenticated
-    header('Location: login.php');
+    $_SESSION['error_message'] = "You must log in to access the dashboard.";
+    header('Location: index.php');
     exit();
 }
 
@@ -46,6 +47,16 @@ $conn->close();
     <!-- Include Materialize CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 800px;
+        }
+        .center-card {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+    </style>
 </head>
 <body class="grey lighten-4">
 
@@ -65,9 +76,9 @@ $conn->close();
         </div>
 
         <div class="section">
-            <h5>Your Novels:</h5>
+            <h5 class="center">Your Novels</h5>
             <?php if (empty($novels)): ?>
-                <div class="card-panel yellow lighten-4">You haven’t uploaded any novels yet.</div>
+                <div class="card-panel yellow lighten-4 center">You haven’t uploaded any novels yet.</div>
             <?php else: ?>
                 <ul class="collection">
                     <?php foreach ($novels as $novel): ?>
@@ -81,7 +92,62 @@ $conn->close();
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
+            <div class="section center">
+               <a href="mystories.php" class="btn green">
+                  <i class="material-icons left">library_books</i> View My Stories
+               </a>
+            </div>
         </div>
+
+        <!-- Centered Novel Upload Section -->
+        <div class="section">
+            <h5 class="center">Upload a Novel</h5>
+            <div class="card-panel center-card">
+                <form action="upload.php" method="POST" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="input-field col s12">
+                            <input id="title" name="title" type="text" required>
+                            <label for="title">Title</label>
+                        </div>
+
+                        <div class="input-field col s12">
+                            <select id="type-select" name="type" required>
+                                <option value="" disabled selected>Choose type</option>
+                                <option value="short">Short Story</option>
+                                <option value="full">Full-Length Novel</option>
+                            </select>
+                            <label for="type-select">Type</label>
+                        </div>
+
+                        <div class="input-field col s12" id="content-container">
+                            <textarea id="content" name="content" class="materialize-textarea"></textarea>
+                            <label for="content">Content (for short stories)</label>
+                        </div>
+
+                        <div class="file-field input-field col s12" id="file-upload-container" style="display: none;">
+                            <div class="btn blue">
+                                <span>Upload PDF</span>
+                                <input type="file" name="file">
+                            </div>
+                            <div class="file-path-wrapper">
+                                <input class="file-path validate" type="text" placeholder="Upload a PDF (for full-length novels)">
+                            </div>
+                        </div>
+
+                        <div class="col s12 center">
+                            <label>
+                                <input type="checkbox" name="is_premium" class="filled-in">
+                                <span>Premium Novel</span>
+                            </label>
+                        </div>
+                        <div class="col s12 center">
+                           <button type="submit" class="btn blue" style="margin-top: 20px;">Upload</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </div>
 
     <footer class="page-footer blue">
@@ -92,6 +158,26 @@ $conn->close();
 
     <!-- Include Materialize JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var elems = document.querySelectorAll("select");
+            M.FormSelect.init(elems);
+
+            // Toggle between textarea and file upload based on type selection
+            const typeSelect = document.getElementById("type-select");
+            const contentContainer = document.getElementById("content-container");
+            const fileUploadContainer = document.getElementById("file-upload-container");
+
+            typeSelect.addEventListener("change", function() {
+                if (typeSelect.value === "short") {
+                    contentContainer.style.display = "block";
+                    fileUploadContainer.style.display = "none";
+                } else if (typeSelect.value === "full") {
+                    contentContainer.style.display = "none";
+                    fileUploadContainer.style.display = "block";
+                }
+            });
+        });
+    </script>
 </body>
 </html>
-

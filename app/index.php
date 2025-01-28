@@ -1,3 +1,10 @@
+<?php
+session_start();
+if (isset($_SESSION['error_message'])) {
+    echo '<p style="color: red; text-align: center;">' . htmlspecialchars($_SESSION['error_message']) . '</p>';
+    unset($_SESSION['error_message']); // Remove message after displaying it
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

@@ -8,6 +8,7 @@ services:
       - "8080:80"
     volumes:
       - ./app:/var/www/html
+      - ./app/uploads:/var/www/html/uploads
     depends_on:
       - mysql
     command: >
