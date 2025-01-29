@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['is_premium'] = $is_premium;
             $_SESSION['role'] = $role;
 
-            header('Location: dashboard.php');
+            header('Location: home.php');
             exit();
         } else {
             echo 'Invalid username or password!';
