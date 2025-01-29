@@ -65,6 +65,9 @@ $conn->close();
             <a href="#" class="brand-logo center">Dashboard</a>
             <ul id="nav-mobile" class="right">
                 <li><a href="logout.php"><i class="material-icons left">exit_to_app</i>Logout</a></li>
+                <?php if ($_SESSION['role'] === 'admin'): ?>
+                <li><a href="admin.php"><i class="material-icons left">admin_panel_settings</i>Admin Panel</a></li>
+                <?php endif; ?>
             </ul>
         </div>
     </nav>
