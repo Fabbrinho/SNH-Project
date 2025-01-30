@@ -31,7 +31,7 @@ if (isset($_SESSION['error_message'])) {
   <div class="container main-container">
     <h1 class="black-text">Welcome to Novelists</h1>
     <p class="grey-text">A platform for sharing and exploring creative novels!</p>
-
+    
     <!-- Buttons for Register and Login -->
     <div class="row">
       <div class="col s12 m6">

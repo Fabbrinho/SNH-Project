@@ -1,24 +1,21 @@
 <?php
-// Include database connection
-$host = 'mysql-container';
-$username = 'a'; // Or the username you configured
-$password = 'a'; // Or your root password
-$dbname = 'novelists_db';
+require 'send_email.php';
+
+$host = 'mysql'; // This should be the name of your MySQL service from Docker Compose
+$username = 'a'; // Your MySQL user
+$password = 'a'; // Your MySQL password
+$dbname = 'novelists_db'; // Your MySQL database name
 
 $conn = new mysqli($host, $username, $password, $dbname);
-
-// Check connection
 if ($conn->connect_error) {
     die('Connection failed: ' . $conn->connect_error);
 }
 
-// Handle form data
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username']);
     $email = trim($_POST['email']);
     $password = trim($_POST['password']);
 
-    // Input validation
     if (empty($username) || empty($email) || empty($password)) {
         die('All fields are required!');
     }
@@ -26,12 +23,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Hash the password
     $password_hash = password_hash($password, PASSWORD_BCRYPT);
 
-    // Prepare and execute query
-    $stmt = $conn->prepare('INSERT INTO Users (username, email, password_hash) VALUES (?, ?, ?)');
-    $stmt->bind_param('sss', $username, $email, $password_hash);
+    // Generate a unique token
+    $token = bin2hex(random_bytes(16));
 
+    // Insert user into the database with the token and is_verified set to false
+    $stmt = $conn->prepare('INSERT INTO Users (username, email, password_hash, token, is_verified) VALUES (?, ?, ?, ?, 0)');
+    $stmt->bind_param('ssss', $username, $email, $password_hash, $token);
     if ($stmt->execute()) {
-        echo 'Registration successful!';
+        // Send verification email
+        $verificationLink = "http://localhost:8080/verify.php?email=$email&token=$token";
+
+        $subject = "Verify Your Email Address";
+        $body = "<p>Hi $username,</p>
+                 <p>Click the link below to verify your email address:</p>
+                 <a href='$verificationLink'>$verificationLink</a>";
+
+        if (sendEmail($email, $subject, $body)) {
+            echo "Registration successful! Please check your email to verify your account.";
+        } else {
+            echo "Error: Unable to send verification email.";
+        }
     } else {
         echo 'Error: ' . $stmt->error;
     }
