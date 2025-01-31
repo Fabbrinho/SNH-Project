@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS Users (
     role ENUM('user', 'admin') DEFAULT 'user',
     token VARCHAR(32),
     is_verified BOOLEAN DEFAULT FALSE,
+    reset_token VARCHAR(64) NULL,
+    reset_expires DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
