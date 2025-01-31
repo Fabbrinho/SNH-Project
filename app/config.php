@@ -1,8 +1,8 @@
 <?php
-$host = 'mysql-container';
-$username = 'a';
-$password = 'a';
-$dbname = 'novelists_db';
+$host = getenv('DB_HOST');
+$username = getenv('DB_USERNAME');
+$password = getenv('DB_PASSWORD');
+$dbname = getenv('DB_NAME');
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
