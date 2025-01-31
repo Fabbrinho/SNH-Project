@@ -1,6 +1,8 @@
 <?php
 require 'send_email.php';
 require_once 'config.php';
+require_once 'vendor/autoload.php';
+use ZxcvbnPhp\Zxcvbn;
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
