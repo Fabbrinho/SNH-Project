@@ -1,5 +1,8 @@
 <?php
 require 'send_email.php';
+require 'vendor/autoload.php'; // Include Composer's autoloader
+
+use ZxcvbnPhp\Zxcvbn;
 
 $host = 'mysql'; // This should be the name of your MySQL service from Docker Compose
 $username = 'a'; // Your MySQL user
@@ -18,6 +21,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($username) || empty($email) || empty($password)) {
         die('All fields are required!');
+    }
+
+    // Check password strength using zxcvbn-php
+    $zxcvbn = new Zxcvbn();
+    $strength = $zxcvbn->passwordStrength($password);
+
+    // Define a minimum strength threshold (e.g., score >= 2)
+    if ($strength['score'] < 2) {
+        die('Password is too weak. Please choose a stronger password.');
     }
 
     // Hash the password

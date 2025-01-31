@@ -14,6 +14,8 @@ if (isset($_SESSION['error_message'])) {
   <!-- MaterializeCSS -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <!-- Include zxcvbn.js for password strength checking -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
   <style>
     .main-container {
       height: 100vh;
@@ -24,6 +26,10 @@ if (isset($_SESSION['error_message'])) {
     }
     #form-container {
       margin-top: 20px;
+    }
+    #password-strength {
+      margin-top: 10px;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -57,19 +63,20 @@ if (isset($_SESSION['error_message'])) {
     document.getElementById("register-btn").addEventListener("click", () => {
       document.getElementById("form-container").innerHTML = `
         <form action="register.php" method="POST" class="col s12">
-        <div class="input-field">
-            <input id="username" name="username" type="text" required>
-            <label for="username">Username</label>
-        </div>
-        <div class="input-field">
-            <input id="email" name="email" type="email" required>
-            <label for="email">Email</label>
-        </div>
-        <div class="input-field">
-            <input id="password" name="password" type="password" required>
-            <label for="password">Password</label>
-        </div>
-        <button type="submit" class="btn blue">Register</button>
+          <div class="input-field">
+              <input id="username" name="username" type="text" required>
+              <label for="username">Username</label>
+          </div>
+          <div class="input-field">
+              <input id="email" name="email" type="email" required>
+              <label for="email">Email</label>
+          </div>
+          <div class="input-field">
+              <input id="password" name="password" type="password" required oninput="checkPasswordStrength(this.value)">
+              <label for="password">Password</label>
+              <div id="password-strength"></div>
+          </div>
+          <button type="submit" class="btn blue">Register</button>
         </form>
       `;
       document.getElementById("form-container").style.display = "block";
@@ -78,19 +85,62 @@ if (isset($_SESSION['error_message'])) {
     document.getElementById("login-btn").addEventListener("click", () => {
       document.getElementById("form-container").innerHTML = `
         <form action="login.php" method="POST" class="col s12">
-        <div class="input-field">
-            <input id="username" name="username" type="text" required>
-            <label for="username">Username</label>
-        </div>
-        <div class="input-field">
-            <input id="password" name="password" type="password" required>
-            <label for="password">Password</label>
-        </div>
-        <button type="submit" class="btn green">Login</button>
+          <div class="input-field">
+              <input id="username" name="username" type="text" required>
+              <label for="username">Username</label>
+          </div>
+          <div class="input-field">
+              <input id="password" name="password" type="password" required>
+              <label for="password">Password</label>
+          </div>
+          <button type="submit" class="btn green">Login</button>
         </form>
+        <p class="col s12">
+          <a href="forgot_password.php">Forgot your password?</a>
+        </p>
       `;
       document.getElementById("form-container").style.display = "block";
     });
+
+    // Function to check password strength using zxcvbn.js
+    function checkPasswordStrength(password) {
+      const strengthText = document.getElementById("password-strength");
+      if (password.length === 0) {
+        strengthText.innerHTML = "";
+        return;
+      }
+
+      // Use zxcvbn.js to evaluate password strength
+      const result = zxcvbn(password);
+      const strength = result.score;
+      let message = "";
+      let color = "red";
+
+      switch (strength) {
+        case 0:
+          message = "Very Weak";
+          break;
+        case 1:
+          message = "Weak";
+          break;
+        case 2:
+          message = "Moderate";
+          color = "orange";
+          break;
+        case 3:
+          message = "Strong";
+          color = "green";
+          break;
+        case 4:
+          message = "Very Strong";
+          color = "darkgreen";
+          break;
+        default:
+          message = "Unknown";
+      }
+
+      strengthText.innerHTML = `<span style="color: ${color};">${message}</span>`;
+    }
   </script>
 </body>
 </html>
