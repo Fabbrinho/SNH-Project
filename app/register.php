@@ -1,15 +1,6 @@
 <?php
 require 'send_email.php';
-
-$host = 'mysql'; // This should be the name of your MySQL service from Docker Compose
-$username = 'a'; // Your MySQL user
-$password = 'a'; // Your MySQL password
-$dbname = 'novelists_db'; // Your MySQL database name
-
-$conn = new mysqli($host, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
+require_once 'config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username']);

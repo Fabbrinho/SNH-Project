@@ -1,22 +1,11 @@
 <?php
 session_start();
-
+require_once 'config.php';
 if (!isset($_SESSION['user_id'])) {
     // Redirect to login if not authenticated
     $_SESSION['error_message'] = "You must log in to access the dashboard.";
     header('Location: index.php');
     exit();
-}
-
-$host = 'mysql-container';
-$username = 'a';
-$password = 'a';
-$dbname = 'novelists_db';
-
-$conn = new mysqli($host, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
 }
 
 $user_id = $_SESSION['user_id'];
@@ -64,7 +53,7 @@ $conn->close();
         <div class="nav-wrapper">
             <a href="#" class="brand-logo center">Dashboard</a>
             <ul id="nav-mobile" class="right">
-
+                <li><a href="home.php"><i class="material-icons left">go_to_home</i>Home</a></li>
                 <li><a href="logout.php"><i class="material-icons left">exit_to_app</i>Logout</a></li>
                 <?php if ($_SESSION['role'] === 'admin'): ?>
                 <li><a href="admin.php"><i class="material-icons left">admin_panel_settings</i>Admin Panel</a></li>
