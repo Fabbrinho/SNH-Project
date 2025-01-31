@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bind_param('ssss', $username, $email, $password_hash, $token);
     if ($stmt->execute()) {
         // Send verification email
-        $verificationLink = "http://localhost:8080/verify.php?email=$email&token=$token";
+        $verificationLink = "https://localhost:8080/verify.php?email=$email&token=$token";
 
         $subject = "Verify Your Email Address";
         $body = "<p>Hi $username,</p>

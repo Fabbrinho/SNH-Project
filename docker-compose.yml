@@ -8,6 +8,11 @@ services:
       - ./app:/var/www/html
       - ./app/uploads:/var/www/html/uploads
       - ./certs:/etc/apache2/ssl
+    environment:
+      DB_HOST: mysql 
+      DB_USERNAME: a   
+      DB_PASSWORD: a  
+      DB_NAME: novelists_db   
     depends_on:
       - mysql
     command: >
