@@ -1,15 +1,5 @@
 <?php
-$host = 'mysql'; // This should be the name of your MySQL service from Docker Compose
-$username = 'a'; // Your MySQL user
-$password = 'a'; // Your MySQL password
-$dbname = 'novelists_db'; // Your MySQL database name
-
-$conn = new mysqli($host, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
-
-$message = ''; // Initialize the message variable
+require_once 'config.php';
 
 if (isset($_GET['email']) && isset($_GET['token'])) {
     $email = $_GET['email'];

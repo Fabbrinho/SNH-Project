@@ -1,18 +1,7 @@
 <?php
 require 'send_email.php';
-require 'vendor/autoload.php'; // Include Composer's autoloader
+require_once 'config.php';
 
-use ZxcvbnPhp\Zxcvbn;
-
-$host = 'mysql'; // This should be the name of your MySQL service from Docker Compose
-$username = 'a'; // Your MySQL user
-$password = 'a'; // Your MySQL password
-$dbname = 'novelists_db'; // Your MySQL database name
-
-$conn = new mysqli($host, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username']);
@@ -43,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bind_param('ssss', $username, $email, $password_hash, $token);
     if ($stmt->execute()) {
         // Send verification email
-        $verificationLink = "http://localhost:8080/verify.php?email=$email&token=$token";
+        $verificationLink = "https://localhost:8080/verify.php?email=$email&token=$token";
 
         $subject = "Verify Your Email Address";
         $body = "<p>Hi $username,</p>

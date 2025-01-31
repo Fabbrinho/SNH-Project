@@ -1,20 +1,10 @@
 <?php
 session_start();
-
+require_once 'config.php';
 // Verifica se l'utente è loggato e se è un admin
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header('Location: index.php');
     exit();
-}
-
-$host = 'mysql-container';
-$username = 'a';
-$password = 'a';
-$dbname = 'novelists_db';
-
-$conn = new mysqli($host, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
 }
 
 // Se viene inviata una richiesta POST per cambiare il privilegio

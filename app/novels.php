@@ -7,7 +7,7 @@ $novel_id = intval($_GET['id']);
 // Query per recuperare la novel
 $sql = "SELECT title, type, content, file_path FROM Novels WHERE id = ?";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $novel_id); // "i" = integer
+$stmt->bind_param("i", $novel_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $novel = $result->fetch_assoc();

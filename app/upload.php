@@ -1,20 +1,9 @@
 <?php
 session_start();
-
+require_once 'config.php';
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit();
-}
-
-$host = 'mysql-container';
-$username = 'a';
-$password = 'a';
-$dbname = 'novelists_db';
-
-$conn = new mysqli($host, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

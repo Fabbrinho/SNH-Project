@@ -1,18 +1,7 @@
 <?php
 session_start(); // Start the session
+require_once 'config.php';
 
-// Include database connection
-$host = 'mysql-container';
-$username = 'a';
-$password = 'a';
-$dbname = 'novelists_db';
-
-$conn = new mysqli($host, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
 
 // Handle form data
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
