@@ -3,14 +3,21 @@ services:
     build: .
     container_name: php-container
     ports:
-      - "8080:80"
+      - "8080:443"
     volumes:
       - ./app:/var/www/html
       - ./app/uploads:/var/www/html/uploads
+      - ./certs:/etc/apache2/ssl
     depends_on:
       - mysql
     command: >
-      sh -c "docker-php-ext-install mysqli && docker-php-ext-enable mysqli && apache2-foreground"
+      sh -c "
+      a2enmod ssl &&
+      cp /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-available/default-ssl.conf.bak &&
+      sed -i 's|SSLCertificateFile.*|SSLCertificateFile /etc/apache2/ssl/selfsigned.crt|' /etc/apache2/sites-available/default-ssl.conf &&
+      sed -i 's|SSLCertificateKeyFile.*|SSLCertificateKeyFile /etc/apache2/ssl/selfsigned.key|' /etc/apache2/sites-available/default-ssl.conf &&
+      a2ensite default-ssl && docker-php-ext-install mysqli && docker-php-ext-enable mysqli &&
+      apache2-foreground"
 
   mysql:
     image: mysql:8.0
