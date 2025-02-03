@@ -1,15 +1,21 @@
 <?php
 session_start();
 require_once 'config.php';
+
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit();
 }
 
+// // **1️⃣ Protezione CSRF**
+// if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+//     die('Invalid CSRF token');
+// }
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = trim($_POST['title']);
     $type = trim($_POST['type']);
-    $content = trim($_POST['content']);
+    $content = isset($_POST['content']) ? trim($_POST['content']) : null;
     $is_premium = isset($_POST['is_premium']) ? 1 : 0;
     $author_id = $_SESSION['user_id'];
 
@@ -18,18 +24,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $file_path = null;
-    if ($type === 'full' && isset($_FILES['file'])) {
-        $upload_dir = 'uploads/';
+    if ($type === 'full' && isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+        
+        // **2️ Creazione sicura della cartella uploads**
+        $upload_dir = __DIR__ . '/uploads/';
         if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
+            if (!mkdir($upload_dir, 0755, true)) {
+                die('Error: Unable to create upload directory. Check permissions.');
+            }
         }
-        $file_name = basename($_FILES['file']['name']);
-        $file_path = $upload_dir . uniqid() . '_' . $file_name;
+
+        // **3️ Verifica dell'estensione del file**
+        $allowed_extensions = ['pdf'];
+        $file_ext = strtolower(pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION));
+
+        if (!in_array($file_ext, $allowed_extensions)) {
+            die('Invalid file extension. Only PDF files are allowed.');
+        }
+
+        // **4️ Verifica del MIME Type**
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime_type = $finfo->file($_FILES['file']['tmp_name']);
+        $allowed_mime_types = ['application/pdf'];
+
+        if (!in_array($mime_type, $allowed_mime_types)) {
+            die('Invalid file type. Only PDF files are allowed.');
+        }
+
+        // **5️ Limitazione della dimensione del file (max 2MB)**
+        $max_size = 2 * 1024 * 1024; // 2MB
+        if ($_FILES['file']['size'] > $max_size) {
+            die('File is too large. Maximum size is 2MB.');
+        }
+
+        // **6️ Generazione di un nome file univoco**
+        $file_name = uniqid() . '_' . basename($_FILES['file']['name']);
+        $file_path = $upload_dir . $file_name;
+
+        // **7️ Spostamento sicuro del file**
         if (!move_uploaded_file($_FILES['file']['tmp_name'], $file_path)) {
-            die('File upload failed!');
+            die('File upload failed! Check folder permissions.');
         }
+
+        // **8️ Convertiamo il percorso in relativo per evitare esposizione del filesystem**
+        $file_path = 'uploads/' . $file_name;
     }
 
+    // **9️ Inserimento nel database**
     $stmt = $conn->prepare('INSERT INTO Novels (author_id, title, type, content, file_path, is_premium) VALUES (?, ?, ?, ?, ?, ?)');
     $stmt->bind_param('issssi', $author_id, $title, $type, $content, $file_path, $is_premium);
 
@@ -44,4 +85,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $conn->close();
+
 ?>
