@@ -83,7 +83,7 @@ $conn->close();
         <h2>Email Verification</h2>
         <p><?php echo $message; ?></p>
         <form action="index.php">
-            <button type="submit">Go to Home</button>
+            <button type="submit">Go to Login Page</button>
         </form>
     </div>
 </body>
