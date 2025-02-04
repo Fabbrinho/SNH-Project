@@ -22,11 +22,15 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// Se è stata inviata una richiesta di cancellazione
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
+
+    if (!ctype_digit($_POST['delete_id'])) {
+        die('Invalid request');
+    }
+
     $delete_id = intval($_POST['delete_id']);
 
-    // Recupera il percorso del file per eliminarlo se necessario
     $stmt = $conn->prepare('SELECT file_path FROM Novels WHERE id = ? AND author_id = ?');
     $stmt->bind_param('ii', $delete_id, $user_id);
     $stmt->execute();
@@ -34,27 +38,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     $stmt->fetch();
     $stmt->close();
 
-    // Elimina il record dal database
+    $upload_dir = __DIR__ . '/uploads/';
+    if (!empty($file_path)) {
+        $real_path = realpath($file_path);
+        if (strpos($real_path, realpath($upload_dir)) === 0 && file_exists($real_path)) {
+            unlink($real_path);
+        } else {
+            $_SESSION['error_message'] = 'Invalid file deletion request.';
+        }
+    }
+
     $stmt = $conn->prepare('DELETE FROM Novels WHERE id = ? AND author_id = ?');
     $stmt->bind_param('ii', $delete_id, $user_id);
 
     if ($stmt->execute()) {
-        // Se il file_path non è vuoto, elimina il file dal server
-        if (!empty($file_path) && file_exists($file_path)) {
-            unlink($file_path); // Elimina il file dal filesystem
-        }
         $_SESSION['success_message'] = 'Novel deleted successfully!';
     } else {
-        $_SESSION['error_message'] = 'Failed to delete the novel.';
+        $_SESSION['error_message'] = 'An error occurred. Please try again later.';
     }
     $stmt->close();
 
-    // Ricarica la pagina per aggiornare l'elenco
     header('Location: mystories.php');
     exit();
 }
 
-// Recupera tutte le novels dell'utente
+
 $stmt = $conn->prepare('SELECT id, title, type, content, file_path, created_at FROM Novels WHERE author_id = ?');
 $stmt->bind_param('i', $user_id);
 $stmt->execute();

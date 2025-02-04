@@ -1,0 +1,7 @@
+# Impedisce l'esecuzione di file PHP nella cartella uploads
+<FilesMatch "\.(php|php5|phps|phtml)$">
+    Deny from all
+</FilesMatch>
+
+# Blocca l'accesso diretto ai file
+Options -Indexes

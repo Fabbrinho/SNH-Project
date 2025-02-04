@@ -21,10 +21,39 @@ if (isset($_SESSION['timeout']) && (time() - $_SESSION['timeout'] > $inactive)) 
     exit();
 }
 
+
 $_SESSION['timeout'] = time(); // Update session timeout
 
 $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
+$stmt = $conn->prepare('SELECT id, username, password_hash, is_premium, role FROM Users WHERE username = ?');
+$stmt->bind_param('s', $username);
+$stmt->execute();
+$stmt->store_result();
+
+if ($stmt->num_rows > 0) {
+    $stmt->bind_result($user_id, $db_username, $password_hash, $is_premium, $role);
+    $stmt->fetch();
+    # dobbiamo verificare che password_hash sia una stringa e NOT NULL per type juggling
+    if (!is_string($password_hash) || empty($password_hash)) {
+        die('Authentication error.');
+    }        
+    if (password_verify($password, $password_hash)) {
+        // Store user info in session
+        $_SESSION['user_id'] = $user_id;
+        $_SESSION['username'] = $db_username;
+        $_SESSION['is_premium'] = $is_premium;
+        $_SESSION['role'] = $role;
+
+        header('Location: home.php');
+        exit();
+    } else {
+        echo 'Invalid username or password!';
+    }
+} else {
+    echo 'Invalid username or password!';
+}
+
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php');

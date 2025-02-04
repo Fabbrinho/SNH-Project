@@ -3,11 +3,7 @@ session_start();
 require 'vendor/autoload.php'; // Include Composer's autoloader
 
 use ZxcvbnPhp\Zxcvbn;
-
-$host = 'mysql';
-$username = 'a';
-$password = 'a';
-$dbname = 'novelists_db';
+require_once 'config.php';
 
 $conn = new mysqli($host, $username, $password, $dbname);
 if ($conn->connect_error) {

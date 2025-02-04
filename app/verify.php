@@ -19,10 +19,12 @@ if (isset($_GET['email']) && isset($_GET['token'])) {
         if ($stmt->execute()) {
             $message = 'Your email has been verified successfully. You can now log in.';
         } else {
-            $message = 'Error: ' . $stmt->error;
+            $message = 'An error occurred while verifying your email. Please try again later.';
+            error_log("Email verification error: " . $stmt->error);
+
         }
     } else {
-        $message = 'This verification link is invalid or has already been used.';
+        $message = 'The verification link is invalid.';
     }
 
     $stmt->close();
