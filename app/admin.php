@@ -12,6 +12,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
     $user_id = intval($_POST['user_id']);
     $new_status = isset($_POST['is_premium']) ? 1 : 0;
 
+    // Verifica che l’utente sia effettivamente un utente normale e non un admin (un admin non può modificare un altro admin)
+    $stmt = $conn->prepare("SELECT id FROM Users WHERE id = ? AND role = 'user'");
+    $stmt->bind_param('i', $user_id);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows === 0) {
+        die('Unauthorized action.');
+    }
+
+    $stmt->close();
+
+
     $stmt = $conn->prepare('UPDATE Users SET is_premium = ? WHERE id = ?');
     $stmt->bind_param('ii', $new_status, $user_id);
 
