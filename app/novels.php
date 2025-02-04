@@ -2,6 +2,10 @@
 session_start();
 require_once 'config.php'; // Connessione al database
 
+if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
+    header("Location: home.php");
+    exit();
+}
 $novel_id = intval($_GET['id']);
 
 // Query per recuperare la novel
@@ -30,6 +34,13 @@ if ($novel['type'] == 'full') {
         header('Content-Type: application/octet-stream'); // Forza il download
         header('Content-Disposition: attachment; filename="' . $filename . '"'); // Nome del file da scaricare
         header('Content-Length: ' . filesize($file_path)); // Dimensione del file
+
+        $upload_dir = __DIR__ . '/uploads/';
+        $real_path = realpath($file_path);
+        if ($real_path === false || strpos($real_path, realpath($upload_dir)) !== 0) {
+            die('Invalid file request.');
+        }
+        
 
         // Legge il file e lo invia al browser
         readfile($file_path);

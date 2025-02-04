@@ -12,6 +12,18 @@ $dotenv->load();
 
 // Function to send email
 function sendEmail($toEmail, $subject, $body) {
+    // Validazione indirizzo email -> FILTER_VALIDATE_EMAIL
+    //Ha un formato valido di email (esempio: utente@example.com)
+    //Non contiene caratteri proibiti (come \n, \r, <script> ecc.)
+    //Ha un dominio e un nome utente conformi alla RFC 5322
+    if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+        die("Invalid email address.");
+    }
+
+    // Sanitizzazione input per prevenire Email Injection
+    $subject = trim(str_replace(["\r", "\n"], '', $subject));
+    $body = strip_tags($body); // Rimuove tag HTML non necessari
+
     $mail = new PHPMailer(true);
 
     try {
