@@ -20,7 +20,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($stmt->num_rows > 0) {
         $stmt->bind_result($user_id, $db_username, $password_hash, $is_premium, $role);
         $stmt->fetch();
-
+        # dobbiamo verificare che password_hash sia una stringa e NOT NULL per type juggling
+        if (!is_string($password_hash) || empty($password_hash)) {
+            die('Authentication error.');
+        }        
         if (password_verify($password, $password_hash)) {
             // Store user info in session
             $_SESSION['user_id'] = $user_id;
