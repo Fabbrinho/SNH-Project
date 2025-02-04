@@ -121,6 +121,7 @@ $conn->close();
                             </p>
                             <?php if ($novel['type'] === 'short'): ?>
                                 <p><em>Content:</em> <?php echo nl2br(htmlspecialchars(substr($novel['content'], 0, 200))); ?>...</p>
+                                <p><a href="novels.php?id=<?php echo $novel['id']; ?>" class="btn blue">See full content</a></p>
                             <?php elseif ($novel['file_path']): ?>
                                 <p><a href="<?php echo htmlspecialchars($novel['file_path']); ?>" class="btn blue">Download PDF</a></p>
                             <?php endif; ?>

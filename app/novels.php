@@ -65,6 +65,7 @@ if ($novel['type'] == 'full') {
         <h3><?php echo htmlspecialchars($novel['title']); ?></h3>
         <pre><?php echo nl2br(htmlspecialchars($novel['content'])); ?></pre>
         <a href="home.php" class="btn blue">Torna alla Home</a>
+        <a href="dashboard.php" class="btn blue">Torna alla Dashboard</a>
     </div>
 </body>
 </html>
