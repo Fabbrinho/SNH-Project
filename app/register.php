@@ -27,6 +27,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    // Check if the username or email already exists
+    $stmt = $conn->prepare('SELECT id FROM Users WHERE username = ? OR email = ?');
+    $stmt->bind_param('ss', $username, $email);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows > 0) {
+        showMessage("Please choose different credentials.");
+        exit();
+    }
+    $stmt->close();
+
     // Verify reCAPTCHA
     $recaptcha_secret = $_ENV['RECAPTCHA_V2_SECRETKEY'];
     $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';

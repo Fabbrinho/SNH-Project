@@ -21,39 +21,10 @@ if (isset($_SESSION['timeout']) && (time() - $_SESSION['timeout'] > $inactive)) 
     exit();
 }
 
-
 $_SESSION['timeout'] = time(); // Update session timeout
 
 $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
-$stmt = $conn->prepare('SELECT id, username, password_hash, is_premium, role FROM Users WHERE username = ?');
-$stmt->bind_param('s', $username);
-$stmt->execute();
-$stmt->store_result();
-
-if ($stmt->num_rows > 0) {
-    $stmt->bind_result($user_id, $db_username, $password_hash, $is_premium, $role);
-    $stmt->fetch();
-    # dobbiamo verificare che password_hash sia una stringa e NOT NULL per type juggling
-    if (!is_string($password_hash) || empty($password_hash)) {
-        die('Authentication error.');
-    }        
-    if (password_verify($password, $password_hash)) {
-        // Store user info in session
-        $_SESSION['user_id'] = $user_id;
-        $_SESSION['username'] = $db_username;
-        $_SESSION['is_premium'] = $is_premium;
-        $_SESSION['role'] = $role;
-
-        header('Location: home.php');
-        exit();
-    } else {
-        echo 'Invalid username or password!';
-    }
-} else {
-    echo 'Invalid username or password!';
-}
-
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php');
@@ -69,6 +40,23 @@ if (empty($username) || empty($password) || empty($recaptcha_response)) {
     showMessage("All fields are required!");
     exit();
 }
+
+// Validate username length and allowed characters
+if (preg_match('/^[a-zA-Z0-9_]{3,20}$/', $username)) {
+    // Sanitize by encoding special characters
+    $username = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
+} else {
+    // Handle invalid username
+    showMessage("Invalid username format!");
+    exit();
+}
+
+// TODO: uncomment this part later on
+// Validate password length
+// if (strlen($password) <= 8) {
+//     showMessage("Password must be at least 8 characters long!");
+//     exit();
+// }
 
 // Verify reCAPTCHA
 $recaptcha_secret = $_ENV['RECAPTCHA_V2_SECRETKEY'];
@@ -100,7 +88,11 @@ if ($stmt->num_rows > 0) {
     $stmt->bind_result($user_id, $db_username, $password_hash, $is_premium, $role);
     $stmt->fetch();
 
-    if ($password_hash && password_verify($password, $password_hash)) {
+    if (!is_string($password_hash) || empty($password_hash)) {
+        die('Authentication error.');
+    }
+
+    if (password_verify($password, $password_hash)) {
         session_regenerate_id(true); // Prevent session fixation
 
         // Store user info in session
@@ -109,15 +101,16 @@ if ($stmt->num_rows > 0) {
         $_SESSION['is_premium'] = $is_premium;
         $_SESSION['role'] = $role;
 
-        showMessage("Login successful! Redirecting...", "success");
-        echo '<script>setTimeout(function(){ window.location.href = "home.php"; }, 2000);</script>';
+        header('Location: home.php');
+        exit();
+    } else {
+        showMessage("Invalid credentials!");
         exit();
     }
+} else {
+    showMessage("Invalid credentials!");
+    exit();
 }
-
-// Login failed
-showMessage("Invalid username or password!");
-exit();
 
 $stmt->close();
 $conn->close();
