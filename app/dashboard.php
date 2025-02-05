@@ -24,7 +24,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
-$is_premium = $_SESSION['is_premium'] ? 'Yes' : 'No';
+$is_premium = $_SESSION['is_premium'];
 
 // Fetch user's novels
 $stmt = $conn->prepare('SELECT title, type, created_at FROM Novels WHERE author_id = ?');
@@ -140,13 +140,14 @@ $conn->close();
                                 <input class="file-path validate" type="text" placeholder="Upload a PDF (for full-length novels)">
                             </div>
                         </div>
-
+                        <?php if ($is_premium): ?>
                         <div class="col s12 center">
                             <label>
                                 <input type="checkbox" name="is_premium" class="filled-in">
                                 <span>Premium Novel</span>
                             </label>
                         </div>
+                        <?php endif; ?>
                         <div class="col s12 center">
                            <button type="submit" class="btn blue" style="margin-top: 20px;">Upload</button>
                         </div>
