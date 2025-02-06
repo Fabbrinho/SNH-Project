@@ -34,6 +34,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    // Validate username format
+    if (preg_match('/^[a-zA-Z0-9_]{3,20}$/', $username)) {
+        // Sanitize by encoding special characters
+        $username = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
+    } else {
+        // Handle invalid username
+        showMessage("Invalid username format! The username must contain only letters, numbers, and underscores, and be 3 to 20 characters long.");
+        exit();
+    }
+
+    // Check if the username or email already exists
+    $stmt = $conn->prepare('SELECT id FROM Users WHERE username = ? OR email = ?');
+    $stmt->bind_param('ss', $username, $email);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows > 0) {
+        showMessage("Please choose different credentials.");
+        exit();
+    }
+    $stmt->close();
+
     // Verify reCAPTCHA
     $recaptcha_secret = $_ENV['RECAPTCHA_V2_SECRETKEY'];
     $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';

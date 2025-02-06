@@ -25,7 +25,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $file_path = null;
-    if ($type === 'full' && isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+    if ($type === 'full' && isset($_FILES['file'])) {
+        // Controllo errori di upload
+        switch ($_FILES['file']['error']) {
+            case UPLOAD_ERR_OK:
+                break;
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                die('File is too large. Maximum size is 2MB.');
+            case UPLOAD_ERR_PARTIAL:
+                die('The file was only partially uploaded.');
+            case UPLOAD_ERR_NO_FILE:
+                die('No file was uploaded.');
+            default:
+                die('An unknown error occurred during file upload.');
+        }
         
         // **2️ Creazione sicura della cartella uploads**
         $upload_dir = __DIR__ . '/uploads/';
