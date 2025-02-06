@@ -58,7 +58,6 @@ $csrfToken = getToken();
   <script>
     const RECAPTCHA_SITE_KEY = "6LdAqcsqAAAAAIA_1xSmHxjA6CwOKXyUyrX5RGEY";
     const csrfToken = "<?php echo $csrfToken; ?>";
-    console.log(csrfToken);
     document.getElementById("register-btn").addEventListener("click", () => {
       document.getElementById("form-container").innerHTML = `
         <form action="register.php" method="POST" class="col s12">
