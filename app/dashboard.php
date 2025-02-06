@@ -23,7 +23,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$username = $_SESSION['username'];
+$username = htmlspecialchars($_SESSION['username'], ENT_QUOTES, 'UTF-8');
 $is_premium = $_SESSION['is_premium'];
 
 // Fetch user's novels

@@ -104,7 +104,8 @@ if ($stmt->num_rows > 0) {
         header('Location: home.php');
         exit();
     } else {
-        showMessage("Invalid credentials!");
+        // Se un attaccante prova diversi username e riceve sempre lo stesso messaggio, può indovinare username validi. ora si crea invece ambiguità
+        showMessage("Invalid username or password!");
         exit();
     }
 } else {
