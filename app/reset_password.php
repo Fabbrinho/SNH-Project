@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'vendor/autoload.php'; // Include Composer's autoloader
+require_once 'csrf.php';
 
 use ZxcvbnPhp\Zxcvbn;
 require_once 'config.php';
@@ -11,6 +12,10 @@ if ($conn->connect_error) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['token_csrf']) || !verifyCsrfToken($_POST['token_csrf'])) {
+        die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
+        exit();
+    }    
     $email = trim($_POST['email']);
     $token = trim($_POST['token']);
     $new_password = trim($_POST['new_password']);
@@ -136,6 +141,7 @@ $conn->close();
     <div class="container">
         <h2>Reset Password</h2>
         <form action="reset_password.php" method="POST">
+            <input type="hidden" name="token_csrf" value="<?php echo getToken(); ?>">
             <input type="hidden" name="email" value="<?php echo htmlspecialchars($_GET['email'] ?? ''); ?>">
             <input type="hidden" name="token" value="<?php echo htmlspecialchars($_GET['token'] ?? ''); ?>">
             <input type="password" name="new_password" id="new_password" required placeholder="Enter new password" oninput="checkPasswordStrength(this.value)">

@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'csrf.php';
 
 session_start();
 $inactive = 300; // 5 minutes
@@ -148,8 +149,10 @@ $conn->close();
                             </label>
                         </div>
                         <?php endif; ?>
+                        
                         <div class="col s12 center">
-                           <button type="submit" class="btn blue" style="margin-top: 20px;">Upload</button>
+                            <input type="hidden" name="token_csrf" value= "<?php echo getToken();?>">
+                            <button type="submit" class="btn blue" style="margin-top: 20px;">Upload</button>
                         </div>
                     </div>
                 </form>

@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'csrf.php';
 require 'vendor/autoload.php';
 use Dotenv\Dotenv;
 
@@ -60,6 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
+if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+    die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
+    exit();
+}
+
+
 // Validate required fields
 $username = trim($_POST['username'] ?? '');
 $password = trim($_POST['password'] ?? '');
@@ -102,7 +109,7 @@ if ($stmt->num_rows > 0) {
 
     if ($password_hash && password_verify($password, $password_hash)) {
         session_regenerate_id(true); // Prevent session fixation
-
+        newToken();
         // Store user info in session
         $_SESSION['user_id'] = $user_id;
         $_SESSION['username'] = $db_username;

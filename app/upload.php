@@ -1,18 +1,19 @@
 <?php
 session_start();
 require_once 'config.php';
-
+require_once 'csrf.php';
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit();
 }
 
-// // **1️⃣ Protezione CSRF**
-// if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-//     die('Invalid CSRF token');
-// }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+        die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
+        exit();
+    }    
+    
     $title = trim($_POST['title']);
     $type = trim($_POST['type']);
     $content = isset($_POST['content']) ? trim($_POST['content']) : null;
