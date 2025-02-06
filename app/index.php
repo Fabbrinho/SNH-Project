@@ -95,6 +95,9 @@
           <br>
           <button type="submit" class="btn green" id="loginBtn" disabled>Login</button>
         </form>
+        <p class="col s12">
+          <a href="forgot_password.php">Forgot your password?</a>
+        </p>
       `;
       document.getElementById("form-container").style.display = "block";
       loadRecaptcha("recaptcha-login", recaptchaLoginVerified, recaptchaLoginExpired);
