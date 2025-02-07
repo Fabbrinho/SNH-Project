@@ -1,3 +1,9 @@
+<?php 
+session_start();
+require_once 'csrf.php'; 
+$csrfToken = getToken();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,11 +57,12 @@
 
   <script>
     const RECAPTCHA_SITE_KEY = "6LdAqcsqAAAAAIA_1xSmHxjA6CwOKXyUyrX5RGEY";
-
+    const csrfToken = "<?php echo $csrfToken; ?>";
     document.getElementById("register-btn").addEventListener("click", () => {
       document.getElementById("form-container").innerHTML = `
         <form action="register.php" method="POST" class="col s12">
           <div class="input-field">
+              <input type="hidden" name="token_csrf" value="${csrfToken}">
               <input id="username" name="username" type="text" required>
               <label for="username">Username</label>
           </div>
@@ -84,6 +91,7 @@
       document.getElementById("form-container").innerHTML = `
         <form id="login-form" action="login.php" method="POST" class="col s12">
           <div class="input-field">
+              <input type="hidden" name="token_csrf" value="${csrfToken}">
               <input id="username" name="username" type="text" required>
               <label for="username">Username</label>
           </div>

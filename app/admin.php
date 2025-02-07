@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once 'config.php';
+require_once 'csrf.php';
+
 // Verifica se l'utente è loggato e se è un admin
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header('Location: index.php');
@@ -9,6 +11,10 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 
 // Se viene inviata una richiesta POST per cambiare il privilegio
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
+    if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+        die("Something went wrong"); 
+    }
+    
     $user_id = intval($_POST['user_id']);
     $new_status = isset($_POST['is_premium']) ? 1 : 0;
 
@@ -92,6 +98,7 @@ $conn->close();
                         </p>
                         <form action="admin.php" method="POST">
                             <input type="hidden" name="user_id" value="<?php echo $user['id']; ?>">
+                            <input type="hidden" name="token_csrf" value= "<?php echo getToken();?>">
                             <label>
                                 <input type="checkbox" name="is_premium" value="1" <?php echo $user['is_premium'] ? 'checked' : ''; ?> onchange="this.form.submit()">
                                 <span>Make Premium</span>

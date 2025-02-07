@@ -36,6 +36,11 @@ INSERT INTO Users (username, password_hash, email, is_premium, role, is_verified
 VALUES ('testuser', '$2y$10$wJ2j9LnL4ryu9SzUFLf5O.lZzgyU2vwiN/HDuRXzMH93UqAbbe6py', 'testuser@example.com', TRUE, 'user', TRUE)
 ON DUPLICATE KEY UPDATE username=username;
 
+-- username = admin, password= admin
+INSERT INTO Users (username, password_hash, email, is_premium, role, is_verified)
+VALUES ('admin', '$2a$10$SCVQlfc7pMTJ2jgiRoCk2OOy/makr1Xfap1dpvUXnohM8DxPmEBH6', 'admin@example.com', TRUE, 'admin', TRUE)
+ON DUPLICATE KEY UPDATE username=username;
+
 INSERT INTO Novels (author_id, title, type, content, is_premium)
 VALUES (1, 'Sample Short Story', 'short', 'Once upon a time...', TRUE)
 ON DUPLICATE KEY UPDATE title=title;
