@@ -1,18 +1,14 @@
 <?php
 session_start();
 require 'send_email.php';
-
-$host = 'mysql';
-$username = 'a';
-$password = 'a';
-$dbname = 'novelists_db';
-
-$conn = new mysqli($host, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
+require_once 'csrf.php';
+require_once 'config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+        die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
+        exit();
+    }    
     $email = trim($_POST['email']);
 
     if (empty($email)) {
@@ -47,8 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param('ssi', $token, $expires, $user_id);
         $stmt->execute();
 
+
         // Secure reset link
-        $resetLink = "http://localhost:8080/reset_password.php?token=" . urlencode($token) . "&email=" . urlencode($email);
+        $resetLink = "https://localhost:8080/reset_password.php?token=" . urlencode($token) . "&email=" . urlencode($email);
+
         $subject = "Password Reset Request";
         $body = "<p>Click the link below to reset your password:</p>
                  <a href='$resetLink'>$resetLink</a>";
@@ -75,6 +73,7 @@ $conn->close();
         <h2>Forgot Password</h2>
         <form action="forgot_password.php" method="POST">
             <div class="input-field">
+                <input type="hidden" name="token_csrf" value= "<?php echo getToken();?>">
                 <input type="email" name="email" id="email" required>
                 <label for="email">Enter your email</label>
             </div>

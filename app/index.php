@@ -1,3 +1,9 @@
+<?php 
+session_start();
+require_once 'csrf.php'; 
+$csrfToken = getToken();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -52,17 +58,7 @@
   <script>
     const RECAPTCHA_SITE_KEY = "6LdAqcsqAAAAAIA_1xSmHxjA6CwOKXyUyrX5RGEY";
 
-    function sanitizeInput(str) {
-        return str.replace(/[&<>"'/]/g, (char) => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;',
-            '/': '&#x2F;'
-        })[char]);
-    }
-
+    const csrfToken = "<?php echo $csrfToken; ?>";
     function createInputField(id, name, type, labelText) {
         const fieldContainer = document.createElement("div");
         fieldContainer.classList.add("input-field");
@@ -82,6 +78,20 @@
 
         return fieldContainer;
     }
+    function createInpuToken(type, name, value) {
+        const fieldContainer = document.createElement("div");
+        fieldContainer.classList.add("input-field");
+
+        const input = document.createElement("input");
+        input.name = name;
+        input.type = type;
+        input.value = value;
+        input.required = true;
+
+        fieldContainer.appendChild(input);
+
+        return fieldContainer;
+    }
 
     function showRegisterForm() {
         const formContainer = document.getElementById("form-container");
@@ -94,6 +104,7 @@
         form.classList.add("col", "s12");
 
         form.appendChild(createInputField("username", "username", "text", "Username"));
+        form.appendChild(createInpuToken( "hidden", "token_csrf","${csrfToken}"));
         form.appendChild(createInputField("email", "email", "email", "Email"));
         
         // Password Field
@@ -140,6 +151,7 @@
         form.classList.add("col", "s12");
 
         form.appendChild(createInputField("username", "username", "text", "Username"));
+        form.appendChild(createInpuToken( "hidden", "token_csrf","${csrfToken}"));
         form.appendChild(createInputField("password", "password", "password", "Password"));
 
         // reCAPTCHA
