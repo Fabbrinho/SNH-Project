@@ -78,7 +78,7 @@ $csrfToken = getToken();
 
         return fieldContainer;
     }
-    function createInpuToken(type, name, value) {
+    function createInputToken(type, name, value) {
         const fieldContainer = document.createElement("div");
         fieldContainer.classList.add("input-field");
 
@@ -104,7 +104,7 @@ $csrfToken = getToken();
         form.classList.add("col", "s12");
 
         form.appendChild(createInputField("username", "username", "text", "Username"));
-        form.appendChild(createInpuToken( "hidden", "token_csrf","${csrfToken}"));
+        form.appendChild(createInputToken( "hidden", "token_csrf",csrfToken));
         form.appendChild(createInputField("email", "email", "email", "Email"));
         
         // Password Field
@@ -151,7 +151,7 @@ $csrfToken = getToken();
         form.classList.add("col", "s12");
 
         form.appendChild(createInputField("username", "username", "text", "Username"));
-        form.appendChild(createInpuToken( "hidden", "token_csrf","${csrfToken}"));
+        form.appendChild(createInputToken( "hidden", "token_csrf",csrfToken));
         form.appendChild(createInputField("password", "password", "password", "Password"));
 
         // reCAPTCHA
