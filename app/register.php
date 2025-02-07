@@ -44,6 +44,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    $username = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
+
+    // Validate email
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        showMessage("Invalid email format!");
+        exit();
+    }
+    $email = filter_var($email, FILTER_SANITIZE_EMAIL);
+
     // Check if the username or email already exists
     $stmt = $conn->prepare('SELECT id FROM Users WHERE username = ? OR email = ?');
     $stmt->bind_param('ss', $username, $email);
@@ -51,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->store_result();
 
     if ($stmt->num_rows > 0) {
-        showMessage("Please choose different credentials.");
+        showMessage("Registration failed. Please try again.");
         exit();
     }
     $stmt->close();

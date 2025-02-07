@@ -10,10 +10,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }    
     $email = trim($_POST['email']);
-    
+
     if (empty($email)) {
         die('Email is required!');
     }
+
+    // Validate and sanitize email
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        die('Invalid email format!');
+    }
+    $email = filter_var($email, FILTER_SANITIZE_EMAIL);
 
     // Check if user exists
     $stmt = $conn->prepare('SELECT id FROM Users WHERE email = ?');
@@ -21,9 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute();
     $stmt->store_result();
 
-    if ($stmt->num_rows === 0) {
-        echo 'If this email exists, a reset link will be sent.';
-    } else {
+    // Always return the same response to prevent user enumeration
+    echo "If this email exists, a reset link will be sent.";
+
+    if ($stmt->num_rows > 0) {
         $stmt->bind_result($user_id);
         $stmt->fetch();
 
@@ -36,17 +43,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param('ssi', $token, $expires, $user_id);
         $stmt->execute();
 
-        // Send email with reset link
-        $resetLink = "https://localhost:8080/reset_password.php?token=$token&email=$email";
+
+        // Secure reset link
+        $resetLink = "https://localhost:8080/reset_password.php?token=" . urlencode($token) . "&email=" . urlencode($email);
+
         $subject = "Password Reset Request";
         $body = "<p>Click the link below to reset your password:</p>
                  <a href='$resetLink'>$resetLink</a>";
 
-        if (sendEmail($email, $subject, $body)) {
-            echo "A reset link has been sent to the given email.";
-        } else {
-            echo "Error: Unable to send reset email.";
-        }
+        sendEmail($email, $subject, $body);
     }
 
     $stmt->close();

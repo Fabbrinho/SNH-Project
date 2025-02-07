@@ -57,109 +57,167 @@ $csrfToken = getToken();
 
   <script>
     const RECAPTCHA_SITE_KEY = "6LdAqcsqAAAAAIA_1xSmHxjA6CwOKXyUyrX5RGEY";
+
     const csrfToken = "<?php echo $csrfToken; ?>";
-    document.getElementById("register-btn").addEventListener("click", () => {
-      document.getElementById("form-container").innerHTML = `
-        <form action="register.php" method="POST" class="col s12">
-          <div class="input-field">
-              <input type="hidden" name="token_csrf" value="${csrfToken}">
-              <input id="username" name="username" type="text" required>
-              <label for="username">Username</label>
-          </div>
-          <div class="input-field">
-              <input id="email" name="email" type="email" required>
-              <label for="email">Email</label>
-          </div>
-          <div class="input-field">
-              <input id="password" name="password" type="password" required oninput="checkPasswordStrength(this.value)">
-              <label for="password">Password</label>
-              <div id="password-strength"></div>
-          </div>
+    function createInputField(id, name, type, labelText) {
+        const fieldContainer = document.createElement("div");
+        fieldContainer.classList.add("input-field");
 
-          <!-- reCAPTCHA -->
-          <div id="recaptcha-register"></div>
-          <br>
+        const input = document.createElement("input");
+        input.id = id;
+        input.name = name;
+        input.type = type;
+        input.required = true;
 
-          <button type="submit" class="btn blue" id="registerBtn" disabled>Register</button>
-        </form>
-      `;
-      document.getElementById("form-container").style.display = "block";
-      loadRecaptcha("recaptcha-register", recaptchaRegisterVerified, recaptchaRegisterExpired);
-    });
+        const label = document.createElement("label");
+        label.htmlFor = id;
+        label.textContent = labelText;
 
-    document.getElementById("login-btn").addEventListener("click", () => {
-      document.getElementById("form-container").innerHTML = `
-        <form id="login-form" action="login.php" method="POST" class="col s12">
-          <div class="input-field">
-              <input type="hidden" name="token_csrf" value="${csrfToken}">
-              <input id="username" name="username" type="text" required>
-              <label for="username">Username</label>
-          </div>
-          <div class="input-field">
-              <input id="password" name="password" type="password" required>
-              <label for="password">Password</label>
-          </div>
-          <div id="recaptcha-login"></div>
-          <br>
-          <button type="submit" class="btn green" id="loginBtn" disabled>Login</button>
-        </form>
-        <p class="col s12">
-          <a href="forgot_password.php">Forgot your password?</a>
-        </p>
-      `;
-      document.getElementById("form-container").style.display = "block";
-      loadRecaptcha("recaptcha-login", recaptchaLoginVerified, recaptchaLoginExpired);
-    });
+        fieldContainer.appendChild(input);
+        fieldContainer.appendChild(label);
 
-    function loadRecaptcha(elementId, successCallback, expiredCallback) {
-      if (document.getElementById(elementId).innerHTML.trim() === "") {
-        grecaptcha.render(elementId, {
-          sitekey: RECAPTCHA_SITE_KEY,
-          callback: successCallback,
-          'expired-callback': expiredCallback
-        });
-      }
+        return fieldContainer;
     }
+    function createInpuToken(type, name, value) {
+        const fieldContainer = document.createElement("div");
+        fieldContainer.classList.add("input-field");
+
+        const input = document.createElement("input");
+        input.name = name;
+        input.type = type;
+        input.value = value;
+        input.required = true;
+
+        fieldContainer.appendChild(input);
+
+        return fieldContainer;
+    }
+
+    function showRegisterForm() {
+        const formContainer = document.getElementById("form-container");
+        formContainer.innerHTML = ""; 
+        formContainer.style.display = "block";
+
+        const form = document.createElement("form");
+        form.action = "register.php";
+        form.method = "POST";
+        form.classList.add("col", "s12");
+
+        form.appendChild(createInputField("username", "username", "text", "Username"));
+        form.appendChild(createInpuToken( "hidden", "token_csrf","${csrfToken}"));
+        form.appendChild(createInputField("email", "email", "email", "Email"));
+        
+        // Password Field
+        const passwordField = createInputField("password", "password", "password", "Password");
+        passwordField.firstChild.setAttribute("oninput", "checkPasswordStrength(this.value)");
+        form.appendChild(passwordField);
+        
+        const passwordStrength = document.createElement("div");
+        passwordStrength.id = "password-strength";
+        form.appendChild(passwordStrength);
+
+        // reCAPTCHA
+        const recaptchaContainer = document.createElement("div");
+        recaptchaContainer.id = "recaptcha-register";
+        form.appendChild(recaptchaContainer);
+        
+        const submitButton = document.createElement("button");
+        submitButton.type = "submit";
+        submitButton.classList.add("btn", "blue");
+        submitButton.id = "registerBtn";
+        submitButton.textContent = "Register";
+        submitButton.disabled = true;
+
+        form.appendChild(submitButton);
+        formContainer.appendChild(form);
+
+        if (!recaptchaContainer.hasChildNodes()) {
+            grecaptcha.render("recaptcha-register", {
+                sitekey: RECAPTCHA_SITE_KEY,
+                callback: recaptchaRegisterVerified,
+                'expired-callback': recaptchaRegisterExpired
+            });
+        }
+    }
+
+    function showLoginForm() {
+        const formContainer = document.getElementById("form-container");
+        formContainer.innerHTML = ""; 
+        formContainer.style.display = "block";
+
+        const form = document.createElement("form");
+        form.action = "login.php";
+        form.method = "POST";
+        form.classList.add("col", "s12");
+
+        form.appendChild(createInputField("username", "username", "text", "Username"));
+        form.appendChild(createInpuToken( "hidden", "token_csrf","${csrfToken}"));
+        form.appendChild(createInputField("password", "password", "password", "Password"));
+
+        // reCAPTCHA
+        const recaptchaContainer = document.createElement("div");
+        recaptchaContainer.id = "recaptcha-login";
+        form.appendChild(recaptchaContainer);
+        
+        const submitButton = document.createElement("button");
+        submitButton.type = "submit";
+        submitButton.classList.add("btn", "green");
+        submitButton.id = "loginBtn";
+        submitButton.textContent = "Login";
+        submitButton.disabled = true;
+
+        form.appendChild(submitButton);
+        formContainer.appendChild(form);
+
+        if (!recaptchaContainer.hasChildNodes()) {
+            grecaptcha.render("recaptcha-login", {
+                sitekey: RECAPTCHA_SITE_KEY,
+                callback: recaptchaLoginVerified,
+                'expired-callback': recaptchaLoginExpired
+            });
+        }
+    }
+
+    document.getElementById("register-btn").addEventListener("click", showRegisterForm);
+    document.getElementById("login-btn").addEventListener("click", showLoginForm);
 
     function checkPasswordStrength(password) {
-      const strengthText = document.getElementById("password-strength");
-      if (password.length === 0) {
-        strengthText.innerHTML = "";
-        return;
-      }
+        const strengthText = document.getElementById("password-strength");
+        if (password.length === 0) {
+            strengthText.innerHTML = "";
+            return;
+        }
 
-      const result = zxcvbn(password);
-      const strength = result.score;
-      let message = "";
-      let color = "red";
+        const result = zxcvbn(password);
+        const strength = result.score;
+        let message = "";
+        let color = "red";
 
-      switch (strength) {
-        case 0: message = "Very Weak"; break;
-        case 1: message = "Weak"; break;
-        case 2: message = "Moderate"; color = "orange"; break;
-        case 3: message = "Strong"; color = "green"; break;
-        case 4: message = "Very Strong"; color = "darkgreen"; break;
-      }
+        switch (strength) {
+            case 0: message = "Very Weak"; break;
+            case 1: message = "Weak"; break;
+            case 2: message = "Moderate"; color = "orange"; break;
+            case 3: message = "Strong"; color = "green"; break;
+            case 4: message = "Very Strong"; color = "darkgreen"; break;
+        }
 
-      strengthText.innerHTML = `<span style="color: ${color};">${message}</span>`;
+        strengthText.innerHTML = `<span style="color: ${color};">${message}</span>`;
     }
 
-    // reCAPTCHA verification callback functions for login
     function recaptchaLoginVerified() {
-      document.getElementById("loginBtn").disabled = false;
+        document.getElementById("loginBtn").disabled = false;
     }
 
     function recaptchaLoginExpired() {
-      document.getElementById("loginBtn").disabled = true;
+        document.getElementById("loginBtn").disabled = true;
     }
 
-    // reCAPTCHA verification callback functions for registration
     function recaptchaRegisterVerified() {
-      document.getElementById("registerBtn").disabled = false;
+        document.getElementById("registerBtn").disabled = false;
     }
 
     function recaptchaRegisterExpired() {
-      document.getElementById("registerBtn").disabled = true;
+        document.getElementById("registerBtn").disabled = true;
     }
   </script>
 </body>

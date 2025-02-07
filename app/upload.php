@@ -9,14 +9,16 @@ if (!isset($_SESSION['user_id'])) {
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
         die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
         exit();
     }    
     
-    $title = trim($_POST['title']);
-    $type = trim($_POST['type']);
-    $content = isset($_POST['content']) ? trim($_POST['content']) : null;
+    $title = htmlspecialchars(trim($_POST['title']), ENT_QUOTES, 'UTF-8');
+    $type = htmlspecialchars(trim($_POST['type']), ENT_QUOTES, 'UTF-8');
+    $content = isset($_POST['content']) ? htmlspecialchars(trim($_POST['content']), ENT_QUOTES, 'UTF-8') : null;
+
     $is_premium = isset($_POST['is_premium']) ? 1 : 0;
     $author_id = $_SESSION['user_id'];
 
