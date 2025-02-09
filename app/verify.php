@@ -1,5 +1,15 @@
 <?php
 require_once 'config.php';
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+
+// Create a logger instance
+$log = new Logger('verify');
+// Define the log file path
+$logFile = __DIR__ . '/logs/novelist-app.log';
+// Add a handler to write logs to the specified file
+$log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
 if (isset($_GET['email']) && isset($_GET['token'])) {
     $email = $_GET['email'];
@@ -17,18 +27,22 @@ if (isset($_GET['email']) && isset($_GET['token'])) {
         $stmt = $conn->prepare('UPDATE Users SET is_verified = 1, token = NULL WHERE email = ?');
         $stmt->bind_param('s', $email);
         if ($stmt->execute()) {
+            $log->info('Email verified successfully.', ['email' => $email]);
             $message = 'Your email has been verified successfully. You can now log in.';
         } else {
+            $log->error('An error occurred while verifying email.', ['email' => $email]);
             $message = 'An error occurred while verifying your email. Please try again later.';
             error_log("Email verification error: " . $stmt->error);
 
         }
     } else {
+        $log->warning('Invalid verification link.', ['email' => $email]);
         $message = 'The verification link is invalid.';
     }
 
     $stmt->close();
 } else {
+    $log->warning('Invalid request.', ['ip' => $_SERVER['REMOTE_ADDR']]);
     $message = 'Invalid request.';
 }
 

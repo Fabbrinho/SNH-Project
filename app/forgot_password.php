@@ -1,24 +1,31 @@
 <?php
 session_start();
 require 'send_email.php';
+require_once 'config.php';
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
 
-$host = 'mysql';
-$username = 'a';
-$password = 'a';
-$dbname = 'novelists_db';
+// Create a logger instance
+$log = new Logger('forgot_password');
+// Define the log file path
+$logFile = __DIR__ . '/logs/novelist-app.log';
+// Add a handler to write logs to the specified file
+$log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
-$conn = new mysqli($host, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
+function showMessage($message, $type = "error") {
+    $color = $type === "success" ? "rgb(107, 197, 128)" : "rgb(221, 84, 98)"; // Green for success, red for error
+    echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background: $color; color: white; text-align: center; font-weight: bold;'>
+            $message
+          </div>";
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email']);
-    
     if (empty($email)) {
         die('Email is required!');
+        exit();
     }
-
     // Check if user exists
     $stmt = $conn->prepare('SELECT id FROM Users WHERE email = ?');
     $stmt->bind_param('s', $email);
@@ -26,7 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->store_result();
 
     if ($stmt->num_rows === 0) {
-        echo 'If this email exists, a reset link will be sent.';
+        $log->warning('Password reset attempt for never registered email.', ['email' => $email]);
+        showMessage("Invalid parameter passed. Please try again.");
     } else {
         $stmt->bind_result($user_id);
         $stmt->fetch();
@@ -46,10 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $body = "<p>Click the link below to reset your password:</p>
                  <a href='$resetLink'>$resetLink</a>";
 
-        if (sendEmail($email, $subject, $body)) {
-            echo "A reset link has been sent to the given email.";
+        if (sendEmail($email, $subject, $body, $log)) {
+            showMessage("A reset link has been sent to the given email.", "success");
+            $log->info('Password reset link sent.', ['email' => $email]);
         } else {
-            echo "Error: Unable to send reset email.";
+            showMessage("Error: Unable to send reset email.");
+            $log->error('Failed to send password reset email.', ['email' => $email]);
         }
     }
 

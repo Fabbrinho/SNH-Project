@@ -1,9 +1,21 @@
 <?php
 session_start();
 require_once 'config.php';
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+
+// Create a logger instance
+$log = new Logger('admin_panel');
+// Define the log file path
+$logFile = __DIR__ . '/logs/novelist-app.log';
+// Add a handler to write logs to the specified file
+$log->pushHandler(new StreamHandler($logFile, Level::Debug));
+
 // Verifica se l'utente è loggato e se è un admin
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header('Location: index.php');
+    $log->critical('Unauthorized access attempt to admin panel.', ['ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
 }
 
@@ -19,7 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
     $stmt->store_result();
 
     if ($stmt->num_rows === 0) {
+        $log->warning('Unauthorized action.', ['user_id' => $user_id]);
         die('Unauthorized action.');
+        exit();
     }
 
     $stmt->close();
@@ -29,8 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
     $stmt->bind_param('ii', $new_status, $user_id);
 
     if ($stmt->execute()) {
+        $log->info('User privilege updated successfully.', ['user_id' => $user_id, 'is_premium' => $new_status]);
         $_SESSION['success_message'] = 'User privilege updated successfully!';
     } else {
+        $log->error('Failed to update user privilege.', ['user_id' => $user_id]);
         $_SESSION['error_message'] = 'Failed to update user privilege!';
     }
 

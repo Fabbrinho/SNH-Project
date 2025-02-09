@@ -1,22 +1,31 @@
 <?php
 require_once 'config.php';
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+
+// Create a logger instance
+$log = new Logger('user_dashboard');
+// Define the log file path
+$logFile = __DIR__ . '/logs/novelist-app.log';
+// Add a handler to write logs to the specified file
+$log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
 session_start();
 $inactive = 300; // 5 minutes
 
 // Check if the session has timed out
 if (isset($_SESSION['timeout']) && (time() - $_SESSION['timeout'] > $inactive)) {
+    $log->warning('Session expired due to inactivity.', ['session_id' => session_id(), 'username' => $_SESSION['username']]);
     session_unset(); // Unset all session variables
     session_destroy(); // Destroy the session
     header("Location: index.php"); // Redirect to login page
     exit();
 }
 
-// Update the session timeout timestamp
-$_SESSION['timeout'] = time();
-
 if (!isset($_SESSION['user_id'])) {
     // Redirect to login if not authenticated
+    $log->warning('Unauthenticated user tried to access the dashboard.', ['ip' => $_SERVER['REMOTE_ADDR']]);
     $_SESSION['error_message'] = "You must log in to access the dashboard.";
     header('Location: index.php');
     exit();
@@ -36,7 +45,7 @@ $novels = [];
 while ($row = $result->fetch_assoc()) {
     $novels[] = $row;
 }
-
+$log->info('User novels fetched', ['user_id' => $user_id, 'novels_count' => count($novels)]);
 $stmt->close();
 $conn->close();
 ?>
