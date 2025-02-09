@@ -22,8 +22,11 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 try {
     $conn = new mysqli($host, $username, $password, $dbname);
-    $conn->set_charset("utf8mb4"); // Imposta il charset per la compatibilità con caratteri speciali
-    $log->info('Database connection established.');
+    $conn->set_charset("utf8mb4"); // Set charset for compatibility with special characters
+    $log->info('Database connection established.', [
+        'host' => $host,
+        'dbname' => $dbname
+    ]);
 } catch (Exception $e) {
     $log->error('Database connection failed: ' . $e->getMessage());
     die('Database connection failed: ' . $e->getMessage());
