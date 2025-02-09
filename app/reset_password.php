@@ -18,7 +18,7 @@ $logFile = __DIR__ . '/logs/novelist-app.log';
 $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!isset($_POST['token_csrf']) || !verifyCsrfToken($_POST['token_csrf'])) {
+    if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
         die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
         exit();
     }    
@@ -72,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($stmt->execute()) {
         $log->info('Password reset successfully.', ['ip' => $_SERVER['REMOTE_ADDR']]);
-        echo "<p>Password successfully updated! <a href='index.php'>Login</a></p>";
         echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background:rgb(107, 197, 128); color: white; text-align: center; font-weight: bold;'>
                 Password successfully updated! <a href='index.php'>Login</a>
             </div>";
