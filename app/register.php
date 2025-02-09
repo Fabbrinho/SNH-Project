@@ -1,6 +1,9 @@
 <?php
 require 'send_email.php';
 require_once 'config.php';
+require_once 'csrf.php';
+
+session_start();
 
 use Dotenv\Dotenv;
 use ZxcvbnPhp\Zxcvbn;
@@ -26,6 +29,10 @@ function showMessage($message, $type = "error") {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+        die("Error, invalid csrf token" ); ### DA CAMBIARE PERCHè SPECIFICO
+        exit();
+    }    
     $username = trim($_POST['username'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = trim($_POST['password'] ?? '');
@@ -49,6 +56,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
 
+    $username = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
+
+    // Validate email
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        showMessage("Invalid email format!");
+        exit();
+    }
+    $email = filter_var($email, FILTER_SANITIZE_EMAIL);
+
     // Check if the username or email already exists
     $stmt = $conn->prepare('SELECT id FROM Users WHERE username = ? OR email = ?');
     $stmt->bind_param('ss', $username, $email);
@@ -56,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->store_result();
 
     if ($stmt->num_rows > 0) {
-        showMessage("Please choose different credentials.");
+        showMessage("Registration failed. Please try again.");
         $log->warning('Username or email already exists: ' . $username . ' / ' . $email);
         exit();
     }

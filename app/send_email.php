@@ -23,7 +23,9 @@ function sendEmail($toEmail, $subject, $body, $log) {
 
     // Sanitizzazione input per prevenire Email Injection
     $subject = trim(str_replace(["\r", "\n"], '', $subject));
-    $body = strip_tags($body); // Rimuove tag HTML non necessari
+    $allowed_tags = '<p><br><strong><em><a>';
+    $body = strip_tags($body, $allowed_tags);
+    $body = htmlspecialchars($body, ENT_QUOTES, 'UTF-8');
 
     $mail = new PHPMailer(true);
 

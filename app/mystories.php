@@ -1,5 +1,7 @@
 <?php
 require_once 'config.php';
+require_once 'csrf.php';
+
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
@@ -33,7 +35,10 @@ if (isset($_SESSION['timeout']) && (time() - $_SESSION['timeout'] > $inactive)) 
 $user_id = $_SESSION['user_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
-
+    if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+        die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
+        exit();
+    }    
     if (!ctype_digit($_POST['delete_id'])) {
         $log->warning('Invalid request to delete a novel.', ['user_id' => $user_id]);
         die('Invalid request');
@@ -140,6 +145,7 @@ $conn->close();
                             <?php endif; ?>
                             <!-- Pulsante per eliminare la novel -->
                             <form action="mystories.php" method="POST" style="display: inline;">
+                                <input type="hidden" name="token_csrf" value="<?php echo getToken();?>">
                                 <input type="hidden" name="delete_id" value="<?php echo $novel['id']; ?>">
                                 <button type="submit" class="btn red">
                                     <i class="material-icons left">delete</i>Delete

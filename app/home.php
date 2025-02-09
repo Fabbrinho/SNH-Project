@@ -80,7 +80,7 @@ $conn->close();
             <?php else: ?>
                 <ul class="collection">
                     <?php foreach ($novels as $novel): ?>
-                        <a href="novels.php?id=<?php echo $novel['id']; ?>"
+                        <a href="novels.php?id=<?php echo htmlspecialchars((string) $novel['id']); ?>"
                         <?php if ($novel['is_premium'] && !$is_premium) : ?>
                             class="disabled-link" 
                             onclick="alert('You are not a premium user!'); return false;" 

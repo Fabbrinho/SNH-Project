@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'csrf.php';
 
 use Dotenv\Dotenv;
 use Monolog\Logger;
@@ -42,6 +43,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     $log->warning('Login attempt using unsupported HTTP method.', ['method' => $_SERVER['REQUEST_METHOD'], 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
 }
+
+if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+    die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
+    exit();
+}
+
 
 // Validate required fields
 $username = trim($_POST['username'] ?? '');
@@ -108,7 +115,7 @@ if ($stmt->num_rows > 0) {
             exit();
         }
         session_regenerate_id(true); // Prevent session fixation
-
+        newToken();
         // Store user info in session
         $_SESSION['user_id'] = $user_id;
         $_SESSION['username'] = $db_username;
@@ -118,8 +125,9 @@ if ($stmt->num_rows > 0) {
         header('Location: home.php');
         exit();
     } else {
-        showMessage("Invalid credentials!");
         $log->warning('Failed login attempt due to incorrect password.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
+        // Se un attaccante prova diversi username e riceve sempre lo stesso messaggio, può indovinare username validi. ora si crea invece ambiguità
+        showMessage("Invalid username or password!");
         exit();
     }
 } else {

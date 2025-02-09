@@ -1,5 +1,7 @@
 <?php
 require_once 'config.php';
+require_once 'csrf.php';
+
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
@@ -32,7 +34,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$username = $_SESSION['username'];
+$username = htmlspecialchars($_SESSION['username'], ENT_QUOTES, 'UTF-8');
 $is_premium = $_SESSION['is_premium'];
 
 // Fetch user's novels
@@ -157,8 +159,10 @@ $conn->close();
                             </label>
                         </div>
                         <?php endif; ?>
+                        
                         <div class="col s12 center">
-                           <button type="submit" class="btn blue" style="margin-top: 20px;">Upload</button>
+                            <input type="hidden" name="token_csrf" value= "<?php echo getToken();?>">
+                            <button type="submit" class="btn blue" style="margin-top: 20px;">Upload</button>
                         </div>
                     </div>
                 </form>

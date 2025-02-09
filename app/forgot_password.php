@@ -1,7 +1,9 @@
 <?php
 session_start();
 require 'send_email.php';
+require_once 'csrf.php';
 require_once 'config.php';
+
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
@@ -20,17 +22,32 @@ function showMessage($message, $type = "error") {
           </div>";
 }
 
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+        die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
+        exit();
+    }    
     $email = trim($_POST['email']);
+
     if (empty($email)) {
         die('Email is required!');
         exit();
     }
+
+    // Validate and sanitize email
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        die('Invalid email format!');
+      exit();
+    }
+    $email = filter_var($email, FILTER_SANITIZE_EMAIL);
+  
     // Check if user exists
     $stmt = $conn->prepare('SELECT id FROM Users WHERE email = ?');
     $stmt->bind_param('s', $email);
     $stmt->execute();
     $stmt->store_result();
+
 
     if ($stmt->num_rows === 0) {
         $log->warning('Password reset attempt for never registered email.', ['email' => $email]);
@@ -48,8 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param('ssi', $token, $expires, $user_id);
         $stmt->execute();
 
-        // Send email with reset link
-        $resetLink = "https://localhost:8080/reset_password.php?token=$token&email=$email";
+
+        // Secure reset link
+        $resetLink = "https://localhost:8080/reset_password.php?token=" . urlencode($token) . "&email=" . urlencode($email);
+
         $subject = "Password Reset Request";
         $body = "<p>Click the link below to reset your password:</p>
                  <a href='$resetLink'>$resetLink</a>";
@@ -82,6 +101,7 @@ $conn->close();
         <h2>Forgot Password</h2>
         <form action="forgot_password.php" method="POST">
             <div class="input-field">
+                <input type="hidden" name="token_csrf" value= "<?php echo getToken();?>">
                 <input type="email" name="email" id="email" required>
                 <label for="email">Enter your email</label>
             </div>

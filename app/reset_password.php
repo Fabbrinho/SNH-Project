@@ -1,7 +1,9 @@
 <?php
 session_start();
+
 require 'vendor/autoload.php';
 require_once 'config.php';
+require_once 'csrf.php';
 
 use ZxcvbnPhp\Zxcvbn;
 use Monolog\Logger;
@@ -16,6 +18,10 @@ $logFile = __DIR__ . '/logs/novelist-app.log';
 $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_POST['token_csrf']) || !verifyCsrfToken($_POST['token_csrf'])) {
+        die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
+        exit();
+    }    
     $email = trim($_POST['email']);
     $token = trim($_POST['token']);
     $new_password = trim($_POST['new_password']);
@@ -157,6 +163,7 @@ $conn->close();
     <div class="container">
         <h2>Reset Password</h2>
         <form action="reset_password.php" method="POST">
+            <input type="hidden" name="token_csrf" value="<?php echo getToken(); ?>">
             <input type="hidden" name="email" value="<?php echo htmlspecialchars($_GET['email'] ?? ''); ?>">
             <input type="hidden" name="token" value="<?php echo htmlspecialchars($_GET['token'] ?? ''); ?>">
             <input type="password" name="new_password" id="new_password" required placeholder="Enter new password" oninput="checkPasswordStrength(this.value)">
