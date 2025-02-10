@@ -29,8 +29,6 @@ $logFile = __DIR__ . '/logs/novelist-app.log';
 // Add a handler to write logs to the specified file
 $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
-}
-
 // function showMessage($message, $type = "error") {
 //     $color = $type === "success" ? "#28a745" : "#dc3545"; // Green for success, red for error
 //     echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background: $color; color: white; text-align: center; font-weight: bold;'>
@@ -140,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  <p>Click the link below to verify your email address:</p>
                  <a href='$verificationLink'>$verificationLink</a>";
 
-        if (sendEmail($email, $subject, $body)) {
+        if (sendEmail($email, $subject, $body, $log)) {
             // showMessage("Registration successful! Please check your email to verify your account.", "success");
             setErrorMessage("Registration successful! Please check your email to verify your account.", "success");
             $log->info('User registered successfully: ' . $username . ' / ' . $email);

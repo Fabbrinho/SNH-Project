@@ -132,7 +132,7 @@ if ($stmt->num_rows > 0) {
 
     if (password_verify($password, $password_hash)) {
         if (!$is_verified) {
-            showMessage("Please verify your email address to activate your account.");
+            setErrorMessage("Please verify your email address to activate your account.");
             $log->warning('Login attempt with unverified email.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
             exit();
         }
