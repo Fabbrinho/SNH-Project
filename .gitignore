@@ -1,2 +1,5 @@
 .DS_Store
 .env
+.pdf
+.log
+uploads

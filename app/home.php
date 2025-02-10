@@ -12,9 +12,6 @@ if (isset($_SESSION['timeout']) && (time() - $_SESSION['timeout'] > $inactive)) 
     exit();
 }
 
-// Update the session timeout timestamp
-$_SESSION['timeout'] = time();
-
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit();

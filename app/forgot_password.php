@@ -4,6 +4,25 @@ require 'send_email.php';
 require_once 'csrf.php';
 require_once 'config.php';
 
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+
+// Create a logger instance
+$log = new Logger('forgot_password');
+// Define the log file path
+$logFile = __DIR__ . '/logs/novelist-app.log';
+// Add a handler to write logs to the specified file
+$log->pushHandler(new StreamHandler($logFile, Level::Debug));
+
+function showMessage($message, $type = "error") {
+    $color = $type === "success" ? "rgb(107, 197, 128)" : "rgb(221, 84, 98)"; // Green for success, red for error
+    echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background: $color; color: white; text-align: center; font-weight: bold;'>
+            $message
+          </div>";
+}
+
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
         die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
@@ -13,24 +32,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($email)) {
         die('Email is required!');
+        exit();
     }
 
     // Validate and sanitize email
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         die('Invalid email format!');
+      exit();
     }
     $email = filter_var($email, FILTER_SANITIZE_EMAIL);
-
+  
     // Check if user exists
     $stmt = $conn->prepare('SELECT id FROM Users WHERE email = ?');
     $stmt->bind_param('s', $email);
     $stmt->execute();
     $stmt->store_result();
 
-    // Always return the same response to prevent user enumeration
-    echo "If this email exists, a reset link will be sent.";
 
-    if ($stmt->num_rows > 0) {
+    if ($stmt->num_rows === 0) {
+        $log->warning('Password reset attempt for never registered email.', ['email' => $email]);
+        showMessage("Invalid parameter passed. Please try again.");
+    } else {
         $stmt->bind_result($user_id);
         $stmt->fetch();
 
@@ -51,7 +73,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $body = "<p>Click the link below to reset your password:</p>
                  <a href='$resetLink'>$resetLink</a>";
 
-        sendEmail($email, $subject, $body);
+        if (sendEmail($email, $subject, $body, $log)) {
+            showMessage("A reset link has been sent to the given email.", "success");
+            $log->info('Password reset link sent.', ['email' => $email]);
+        } else {
+            showMessage("Error: Unable to send reset email.");
+            $log->error('Failed to send password reset email.', ['email' => $email]);
+        }
     }
 
     $stmt->close();

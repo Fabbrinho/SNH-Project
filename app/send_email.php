@@ -1,5 +1,4 @@
 <?php
-// Include Composer's autoloader
 require __DIR__ . '/vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -11,13 +10,15 @@ $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 // Function to send email
-function sendEmail($toEmail, $subject, $body) {
+function sendEmail($toEmail, $subject, $body, $log) {
     // Validazione indirizzo email -> FILTER_VALIDATE_EMAIL
     //Ha un formato valido di email (esempio: utente@example.com)
     //Non contiene caratteri proibiti (come \n, \r, <script> ecc.)
     //Ha un dominio e un nome utente conformi alla RFC 5322
     if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+        $log->warning('Invalid email address.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die("Invalid email address.");
+        exit();
     }
 
     // Sanitizzazione input per prevenire Email Injection
@@ -48,9 +49,11 @@ function sendEmail($toEmail, $subject, $body) {
 
         // Send email
         $mail->send();
+        $log->info('Email sent successfully.', ['to' => $toEmail]);
         return true;
     } catch (Exception $e) {
         echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+        $log->error('Email could not be sent.', ['error' => $mail->ErrorInfo]);
         return false;
     }
 }
