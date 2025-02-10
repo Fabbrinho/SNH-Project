@@ -26,8 +26,7 @@ if (!isset($_SESSION['user_id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
-        die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
-        exit();
+        die("Something went wrong");
     }    
     
     $title = htmlspecialchars(trim($_POST['title']), ENT_QUOTES, 'UTF-8');

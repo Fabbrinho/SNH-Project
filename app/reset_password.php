@@ -18,8 +18,8 @@ $logFile = __DIR__ . '/logs/novelist-app.log';
 $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
-        die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
+    if (!isset($_POST['token_csrf']) || !verifyCsrfToken($_POST['token_csrf'])) {
+        die("Something went wrong");
         exit();
     }    
     $email = trim($_POST['email']);

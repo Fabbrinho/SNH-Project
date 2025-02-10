@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS Users (
     is_verified BOOLEAN DEFAULT FALSE,
     reset_token VARCHAR(64) NULL,
     reset_expires DATETIME NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    trials INTEGER DEFAULT 0,
+    unlocking_date TIMESTAMP DEFAULT NULL
 );
 
 -- Create the Novels table

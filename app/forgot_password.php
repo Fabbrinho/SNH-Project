@@ -25,8 +25,7 @@ function showMessage($message, $type = "error") {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
-        die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
-        exit();
+        die("Something went wrong");
     }    
     $email = trim($_POST['email']);
 

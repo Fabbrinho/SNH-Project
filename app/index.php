@@ -2,6 +2,26 @@
 session_start();
 require_once 'csrf.php'; 
 $csrfToken = getToken();
+
+function showMessage($message, $type = "error") {
+    $color = $type === "success" ? "#28a745" : "#dc3545"; 
+    echo "<div id='error' style='padding: 10px; margin: 10px 0; border-radius: 5px; background: $color; color: white; text-align: center; font-weight: bold;'>
+            $message <span id='countdown-timer'></span>
+          </div>";
+}
+
+$errorMessage = $_SESSION['error_message'] ?? null;
+$source = $_SESSION['source'] ?? null;
+$unlockDate = $_SESSION['unlock_date'] ?? null;
+$type = $_SESSION['type'] ?? "error";
+
+if($errorMessage !== null)
+  showMessage($errorMessage, $type);
+unset($_SESSION['error_message']);
+unset($_SESSION['source']); 
+unset($_SESSION['unlock_date']);
+unset($_SESSION['type']);
+
 ?>
 
 <!DOCTYPE html>
@@ -150,7 +170,7 @@ $csrfToken = getToken();
         form.method = "POST";
         form.classList.add("col", "s12");
 
-        form.appendChild(createInputField("username", "username", "text", "Username"));
+        form.appendChild(createInputField("email", "email", "text", "Email"));
         form.appendChild(createInputToken( "hidden", "token_csrf",csrfToken));
         form.appendChild(createInputField("password", "password", "password", "Password"));
 
@@ -186,7 +206,12 @@ $csrfToken = getToken();
 
     document.getElementById("register-btn").addEventListener("click", showRegisterForm);
     document.getElementById("login-btn").addEventListener("click", showLoginForm);
-
+    <?php if ($source === "LOGIN"): ?>
+      window.onload = function() { showLoginForm(); };
+    <?php endif; ?>
+    <?php if ($source === "REGISTER"): ?>
+      window.onload = function() { showRegisterForm(); };
+    <?php endif; ?>
     function checkPasswordStrength(password) {
         const strengthText = document.getElementById("password-strength");
         if (password.length === 0) {
@@ -225,6 +250,33 @@ $csrfToken = getToken();
     function recaptchaRegisterExpired() {
         document.getElementById("registerBtn").disabled = true;
     }
+
+    <?php if ($unlockDate): ?>
+      const unlockTimestamp = <?php echo $unlockDate * 1000; ?>;
+      const countdownElement = document.getElementById("countdown-timer");
+      const countdownContainer = document.getElementById("error");
+
+      function updateCountdown() {
+          const now = new Date().getTime();
+          const timeLeft = unlockTimestamp - now;
+
+          if (timeLeft <= 0) {
+              countdownContainer.style.display = "none";
+              return;
+          }
+
+          const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+          countdownElement.textContent = `${minutes}m ${seconds}s`;
+          countdownContainer.style.display = "block";
+
+          setTimeout(updateCountdown, 1000);
+      }
+
+      updateCountdown();
+    <?php endif; ?>
+
   </script>
 </body>
 </html>
