@@ -26,9 +26,9 @@ $user_id = $_SESSION['user_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
-        die("Error, invalid csrf token"); ### DA CAMBIARE PERCHè SPECIFICO
-        exit();
+        die("Something went wrong");
     }    
+    
     if (!ctype_digit($_POST['delete_id'])) {
         die('Invalid request');
     }
