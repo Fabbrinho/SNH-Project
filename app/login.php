@@ -102,13 +102,13 @@ if (!$recaptcha_data || !$recaptcha_data['success']) {
 }
 
 // Prepare SQL query
-$stmt = $conn->prepare('SELECT id, username, password_hash, is_premium, role, is_verified, trials, unlocking_date FROM Users WHERE email = ?');
+$stmt = $conn->prepare('SELECT id, username, password_hash, is_premium, role, is_verified, trials, unlocking_date, password_changed_at FROM Users WHERE email = ?');
 $stmt->bind_param('s', $email);
 $stmt->execute();
 $stmt->store_result();
 
 if ($stmt->num_rows > 0) {
-    $stmt->bind_result($user_id, $db_username, $password_hash, $is_premium, $role, $is_verified, $trials, $unlocking_date);
+    $stmt->bind_result($user_id, $db_username, $password_hash, $is_premium, $role, $is_verified, $trials, $unlocking_date,$password_changed_at);
     $stmt->fetch();
 
     // Controlla se l'account è bloccato
@@ -129,6 +129,40 @@ if ($stmt->num_rows > 0) {
         die('Authentication error.');
         exit();
     }
+
+    // // Definiamo la durata massima della password (es. 90 giorni)
+    // $max_password_age = 90; // giorni
+
+    // $password_last_changed = new DateTime($password_changed_at);
+    // $current_date = new DateTime();
+    // $interval = $password_last_changed->diff($current_date);
+
+    // // Se la password è più vecchia di 90 giorni, reindirizza al cambio password
+    // if ($interval->days > $max_password_age) {
+    //     $_SESSION['force_password_reset'] = true; // Indica che il reset è obbligatorio
+    //     header('Location: force_password_change.php'); // Nuova pagina per il cambio password
+    //     exit();
+    // }
+
+    // Definiamo la durata massima della password in minuti (1 minuto per il test)
+    $max_password_age_minutes = 1;
+
+    // Convertiamo la data di cambio password in un oggetto DateTime
+    $password_last_changed = new DateTime($password_changed_at);
+    $current_date = new DateTime();
+
+    // Calcoliamo la differenza in minuti
+    $interval = $current_date->getTimestamp() - $password_last_changed->getTimestamp();
+    $interval_in_minutes = $interval / 60; // Converte i secondi in minuti
+
+    // Se la password è più vecchia del limite massimo, reindirizza al cambio password
+    if ($interval_in_minutes > $max_password_age_minutes) {
+        $_SESSION['force_password_reset'] = true; // Indica che il reset è obbligatorio
+        header('Location: force_password_change.php'); // Nuova pagina per il cambio password
+        exit();
+    }
+
+
 
     if (password_verify($password, $password_hash)) {
         if (!$is_verified) {
@@ -172,6 +206,7 @@ if ($stmt->num_rows > 0) {
         $log->warning('Failed login attempt due to incorrect password.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
         exit();
     }
+    
 } else {
     // showMessage("Invalid credentials!");
     setErrorMessage("Invalid username or password!");

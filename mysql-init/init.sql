@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS Users (
     reset_expires DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     trials INTEGER DEFAULT 0,
-    unlocking_date TIMESTAMP DEFAULT NULL
+    unlocking_date TIMESTAMP DEFAULT NULL,
+    password_changed_at TIMESTAMP DEFAULT NULL
 );
 
 -- Create the Novels table
