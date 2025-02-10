@@ -39,24 +39,22 @@ if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
 
 
 // Validate required fields
-$username = trim($_POST['username'] ?? '');
+$email = trim($_POST['email'] ?? '');
 $password = trim($_POST['password'] ?? '');
 $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
 
-if (empty($username) || empty($password) || empty($recaptcha_response)) {
+if (empty($email) || empty($password) || empty($recaptcha_response)) {
     showMessage("All fields are required!");
     exit();
 }
 
-// Validate username length and allowed characters
-if (preg_match('/^[a-zA-Z0-9_]{3,20}$/', $username)) {
-    // Sanitize by encoding special characters
-    $username = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
-} else {
-    // Handle invalid username
-    showMessage("Invalid username format!");
+// Validate email
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    showMessage("Invalid email format!");
     exit();
 }
+$email = filter_var($email, FILTER_SANITIZE_EMAIL);
+
 
 // TODO: uncomment this part later on
 // Validate password length
@@ -86,8 +84,8 @@ if (!$recaptcha_data || !$recaptcha_data['success']) {
 }
 
 // Prepare SQL query
-$stmt = $conn->prepare('SELECT id, username, password_hash, is_premium, role FROM Users WHERE username = ?');
-$stmt->bind_param('s', $username);
+$stmt = $conn->prepare('SELECT id, username, password_hash, is_premium, role FROM Users WHERE email = ?');
+$stmt->bind_param('s', $email);
 $stmt->execute();
 $stmt->store_result();
 

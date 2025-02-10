@@ -127,9 +127,9 @@ $conn->close();
                                 <p><em>Content:</em> <?php echo nl2br(htmlspecialchars(substr($novel['content'], 0, 200))); ?>...</p>
                                 <p><a href="novels.php?id=<?php echo $novel['id']; ?>" class="btn blue">See full content</a></p>
                             <?php elseif ($novel['file_path']): ?>
-                                <p><a href="<?php echo htmlspecialchars($novel['file_path']); ?>" class="btn blue">Download PDF</a></p>
+                                <p><a href="novels.php?id=<?php echo $novel['id']; ?>" class="btn blue">Download PDF</a></p>
                             <?php endif; ?>
-                            <!-- Pulsante per eliminare la novel -->
+                        
                             <form action="mystories.php" method="POST" style="display: inline;">
                                 <input type="hidden" name="token_csrf" value="<?php echo getToken();?>">
                                 <input type="hidden" name="delete_id" value="<?php echo $novel['id']; ?>">

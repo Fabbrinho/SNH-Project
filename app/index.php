@@ -150,7 +150,7 @@ $csrfToken = getToken();
         form.method = "POST";
         form.classList.add("col", "s12");
 
-        form.appendChild(createInputField("username", "username", "text", "Username"));
+        form.appendChild(createInputField("email", "email", "text", "Email"));
         form.appendChild(createInputToken( "hidden", "token_csrf",csrfToken));
         form.appendChild(createInputField("password", "password", "password", "Password"));
 
