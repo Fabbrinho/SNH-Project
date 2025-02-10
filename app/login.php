@@ -1,8 +1,18 @@
 <?php
 require_once 'config.php';
 require_once 'csrf.php';
-require 'vendor/autoload.php';
+
 use Dotenv\Dotenv;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+
+// Create a logger instance
+$log = new Logger('user_login');
+// Define the log file path
+$logFile = __DIR__ . '/logs/novelist-app.log';
+// Add a handler to write logs to the specified file
+$log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
 session_start();
 $inactive = 300; // 5 minutes session timeout
@@ -25,8 +35,10 @@ function setErrorMessage($message) {
 if (isset($_SESSION['timeout']) && (time() - $_SESSION['timeout'] > $inactive)) {
     session_unset();
     session_destroy();
+  
     // showMessage("Session expired. Please log in again.");
     setErrorMessage("Session expired. Please log in again.");
+    $log->warning('Session expired due to inactivity.', ['session_id' => session_id()]);
     exit();
 }
 
@@ -37,6 +49,7 @@ $dotenv->load();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php');
+    $log->warning('Login attempt using unsupported HTTP method.', ['method' => $_SERVER['REQUEST_METHOD'], 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
 }
 
@@ -51,8 +64,8 @@ $password = trim($_POST['password'] ?? '');
 $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
 
 if (empty($email) || empty($password) || empty($recaptcha_response)) {
-    // showMessage("All fields are required!");
-    setErrorMessage("Session expired. Please log in again.");
+    setErrorMessage("All fields are required!");
+    $log->warning('Login attempt with missing fields.', ['email' => $email, 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
 }
 
@@ -60,17 +73,11 @@ if (empty($email) || empty($password) || empty($recaptcha_response)) {
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     // showMessage("Invalid email format!");
     setErrorMessage("Invalid email format!");
+    $log->warning('Login attempt with invalid email format.', ['email' => $email, 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
 }
+
 $email = filter_var($email, FILTER_SANITIZE_EMAIL);
-
-
-// TODO: uncomment this part later on
-// Validate password length
-// if (strlen($password) <= 8) {
-//     showMessage("Password must be at least 8 characters long!");
-//     exit();
-// }
 
 // Verify reCAPTCHA
 $recaptcha_secret = $_ENV['RECAPTCHA_V2_SECRETKEY'];
@@ -90,17 +97,18 @@ $recaptcha_data = json_decode($recaptcha_verify, true);
 if (!$recaptcha_data || !$recaptcha_data['success']) {
     // showMessage("reCAPTCHA verification failed! Please try again.");
     setErrorMessage("reCAPTCHA verification failed! Please try again.");
+    $log->warning('reCAPTCHA verification failed.', ['username' => $username, 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
 }
 
 // Prepare SQL query
-$stmt = $conn->prepare('SELECT id, username, password_hash, is_premium, role, trials, unlocking_date FROM Users WHERE email = ?');
+$stmt = $conn->prepare('SELECT id, username, password_hash, is_premium, role, is_verified, trials, unlocking_date FROM Users WHERE email = ?');
 $stmt->bind_param('s', $email);
 $stmt->execute();
 $stmt->store_result();
 
 if ($stmt->num_rows > 0) {
-    $stmt->bind_result($user_id, $db_username, $password_hash, $is_premium, $role, $trials, $unlocking_date);
+    $stmt->bind_result($user_id, $db_username, $password_hash, $is_premium, $role, $is_verified, $trials, $unlocking_date);
     $stmt->fetch();
 
     // Controlla se l'account è bloccato
@@ -117,10 +125,17 @@ if ($stmt->num_rows > 0) {
     }
 
     if (!is_string($password_hash) || empty($password_hash)) {
+        $log->error('Invalid password hash retrieved from database.', ['username' => $db_username]);
         die('Authentication error.');
+        exit();
     }
 
     if (password_verify($password, $password_hash)) {
+        if (!$is_verified) {
+            showMessage("Please verify your email address to activate your account.");
+            $log->warning('Login attempt with unverified email.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
+            exit();
+        }
         session_regenerate_id(true); // Prevent session fixation
         newToken();
         // Store user info in session
@@ -132,12 +147,14 @@ if ($stmt->num_rows > 0) {
         $update_stmt = $conn->prepare('UPDATE Users SET trials = 0, unlocking_date = NULL WHERE id = ?');
         $update_stmt->bind_param('i', $user_id);
         $update_stmt->execute();
+        $log->info('User logged in successfully.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
         
         header('Location: home.php');
         exit();
     } else {
         $trials ++;
         if(($trials % 3)==0){
+            $log->info('Login Locking due to retry limit reach.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
             $lock_duration = min(5 * pow(2, $trials), 86400);
             $new_unlocking_date = (new DateTime())->modify("+$lock_duration seconds")->format('Y-m-d H:i:s');
 
@@ -145,17 +162,20 @@ if ($stmt->num_rows > 0) {
             $update_stmt->bind_param('isi', $trials, $new_unlocking_date,$user_id);
             $update_stmt->execute();
         }else{
+            $log->info('Increasing login retry counter.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
             $update_stmt = $conn->prepare('UPDATE Users SET trials = ?, unlocking_date = NULL WHERE id = ?');
             $update_stmt->bind_param('ii', $trials ,$user_id);
             $update_stmt->execute();
         }
         // showMessage("Invalid username or password!");
-        setErrorMessage("Invalid username or password!");
+        setErrorMessage("Invalid email or password!");
+        $log->warning('Failed login attempt due to incorrect password.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
         exit();
     }
 } else {
     // showMessage("Invalid credentials!");
     setErrorMessage("Invalid username or password!");
+    $log->warning('Failed login attempt with non-existent username.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
 }
 

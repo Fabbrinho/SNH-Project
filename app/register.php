@@ -2,11 +2,14 @@
 require 'send_email.php';
 require_once 'config.php';
 require_once 'csrf.php';
-require_once 'vendor/autoload.php';
 
 session_start();
+
 use Dotenv\Dotenv;
 use ZxcvbnPhp\Zxcvbn;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
 
 $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
@@ -17,6 +20,15 @@ function setErrorMessage($message, $type = "error") {
     $_SESSION['source'] = "REGISTER";
     header('Location: index.php'); // Reindirizza l'utente alla pagina di login
     exit();
+}
+
+// Create a logger instance
+$log = new Logger('user_registration');
+// Define the log file path
+$logFile = __DIR__ . '/logs/novelist-app.log';
+// Add a handler to write logs to the specified file
+$log->pushHandler(new StreamHandler($logFile, Level::Debug));
+
 }
 
 // function showMessage($message, $type = "error") {
@@ -38,18 +50,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate input fields
     if (empty($username) || empty($email) || empty($password) || empty($recaptcha_response)) {
         // showMessage("All fields are required!");
-        setErrorMessage("All fields are required!");
+        setErrorMessage("All fields are required!");;
+        $log->warning('Registration attempt with empty fields.');
         exit();
     }
-
+    
     // Validate username format
     if (preg_match('/^[a-zA-Z0-9_]{3,20}$/', $username)) {
         // Sanitize by encoding special characters
         $username = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
     } else {
         // Handle invalid username
+      
         // showMessage("Invalid username format! The username must contain only letters, numbers, and underscores, and be 3 to 20 characters long.");
         setErrorMessage("Invalid username format! The username must contain only letters, numbers, and underscores, and be 3 to 20 characters long.");
+        $log->warning('Invalid username format: ' . $username);
         exit();
     }
 
@@ -72,6 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($stmt->num_rows > 0) {
         // showMessage("Registration failed. Please try again.");
         setErrorMessage("Registration failed. Please try again.");
+        $log->warning('Username or email already exists: ' . $username . ' / ' . $email);
         exit();
     }
     $stmt->close();
@@ -94,6 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$recaptcha_data || !$recaptcha_data['success']) {
         //showMessage("reCAPTCHA verification failed! Please try again.");
         setErrorMessage("reCAPTCHA verification failed! Please try again.");
+        $log->warning('reCAPTCHA verification failed.');
         exit();
     }
 
@@ -103,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($strength['score'] < 2) {
         // showMessage("Password is too weak. Please choose a stronger password.");
         setErrorMessage("Password is too weak. Please choose a stronger password.");
+        $log->warning('Weak password chosen.');
         exit();
     }
 
@@ -125,13 +143,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (sendEmail($email, $subject, $body)) {
             // showMessage("Registration successful! Please check your email to verify your account.", "success");
             setErrorMessage("Registration successful! Please check your email to verify your account.", "success");
+            $log->info('User registered successfully: ' . $username . ' / ' . $email);
         } else {
             // showMessage("Error: Unable to send verification email.");
             setErrorMessage("Error: Unable to send verification email.");
+            $log->error('Failed to send verification email to: ' . $email);
         }
     } else {
         // showMessage("Error: " . $stmt->error);
         setErrorMessage("Error: " . $stmt->error);
+        $log->error('Database insertion failed: ' . $stmt->error);
     }
 
     $stmt->close();

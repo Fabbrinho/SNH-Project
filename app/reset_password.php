@@ -1,26 +1,35 @@
 <?php
 session_start();
-require 'vendor/autoload.php'; // Include Composer's autoloader
+
+require 'vendor/autoload.php';
+require_once 'config.php';
 require_once 'csrf.php';
 
 use ZxcvbnPhp\Zxcvbn;
-require_once 'config.php';
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
 
-$conn = new mysqli($host, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die('Connection failed: ' . $conn->connect_error);
-}
+// Create a logger instance
+$log = new Logger('reset_password');
+// Define the log file path
+$logFile = __DIR__ . '/logs/novelist-app.log';
+// Add a handler to write logs to the specified file
+$log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['token_csrf']) || !verifyCsrfToken($_POST['token_csrf'])) {
         die("Something went wrong");
+        exit();
     }    
     $email = trim($_POST['email']);
     $token = trim($_POST['token']);
     $new_password = trim($_POST['new_password']);
 
     if (empty($email) || empty($token) || empty($new_password)) {
+        $log->warning('Reset password attempt with empty fields.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die('All fields are required!');
+        exit();
     }
 
     // Validate token
@@ -30,7 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->store_result();
 
     if ($stmt->num_rows === 0) {
+        $log->warning('Invalid or expired reset token.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die('Invalid or expired token.');
+        exit();
     }
 
     $stmt->bind_result($user_id, $reset_expires);
@@ -38,7 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Check if token expired
     if (strtotime($reset_expires) < time()) {
+        $log->warning('Reset token expired.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die('Token expired. Please request a new password reset.');
+        exit();
     }
 
     // Check password strength using zxcvbn-php
@@ -47,7 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Define a minimum strength threshold (e.g., score >= 2)
     if ($strength['score'] < 2) {
+        $log->warning('Weak password provided.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die('Password is too weak. Please choose a stronger password.');
+        exit();
     }
 
     // Update password
@@ -56,9 +71,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bind_param('si', $hashed_password, $user_id);
     
     if ($stmt->execute()) {
-        echo "<p>Password successfully updated! <a href='index.php'>Login</a></p>";
+        $log->info('Password reset successfully.', ['ip' => $_SERVER['REMOTE_ADDR']]);
+        echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background:rgb(107, 197, 128); color: white; text-align: center; font-weight: bold;'>
+                Password successfully updated! <a href='index.php'>Login</a>
+            </div>";
     } else {
-        echo "<p>Error updating password.</p>";
+        $log->error('Error updating password.', ['ip' => $_SERVER['REMOTE_ADDR']]);
+        echo "div style='padding: 10px; margin: 10px 0; border-radius: 5px; background:rgb(221, 84, 98); color: white; text-align: center; font-weight: bold;'>
+                Error updating password. Please try again.
+            </div>";
+        exit();
     }
 
     $stmt->close();

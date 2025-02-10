@@ -196,6 +196,12 @@ unset($_SESSION['type']);
                 'expired-callback': recaptchaLoginExpired
             });
         }
+
+        // Forgot password prompt
+        const forgotPassword = document.createElement("p");
+        forgotPassword.innerHTML = 'Forgot your password? <a href="forgot_password.php">Reset here</a>';
+        form.appendChild(forgotPassword);
+        formContainer.appendChild(form);
     }
 
     document.getElementById("register-btn").addEventListener("click", showRegisterForm);

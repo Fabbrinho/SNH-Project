@@ -2,27 +2,37 @@
 require_once 'config.php';
 require_once 'csrf.php';
 
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+
+// Create a logger instance
+$log = new Logger('user_mystories');
+// Define the log file path
+$logFile = __DIR__ . '/logs/novelist-app.log';
+// Add a handler to write logs to the specified file
+$log->pushHandler(new StreamHandler($logFile, Level::Debug));
+
 session_start(); // Start session securely
+
+if (!isset($_SESSION['user_id'])) {
+    $log->warning('Unauthenticated user tried to access the dashboard.', ['ip' => $_SERVER['REMOTE_ADDR']]);
+    header('Location: login.php');
+    exit();
+}
+
 $inactive = 300; // 5 minutes
 
 // Check if the session has timed out
 if (isset($_SESSION['timeout']) && (time() - $_SESSION['timeout'] > $inactive)) {
+    $log->warning('Session expired due to inactivity.', ['session_id' => session_id(), 'username' => $_SESSION['username']]);
     session_unset(); // Unset all session variables
     session_destroy(); // Destroy the session
     header("Location: index.php"); // Redirect to login page
     exit();
 }
 
-// Update the session timeout timestamp
-$_SESSION['timeout'] = time();
-
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit();
-}
-
 $user_id = $_SESSION['user_id'];
-
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
@@ -30,7 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     }    
     
     if (!ctype_digit($_POST['delete_id'])) {
+        $log->warning('Invalid request to delete a novel.', ['user_id' => $user_id]);
         die('Invalid request');
+        exit();
     }
 
     $delete_id = intval($_POST['delete_id']);
@@ -56,8 +68,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     $stmt->bind_param('ii', $delete_id, $user_id);
 
     if ($stmt->execute()) {
+        $log->info('Novel deleted successfully.', ['user_id' => $user_id, 'novel_id' => $delete_id]);
         $_SESSION['success_message'] = 'Novel deleted successfully!';
     } else {
+        $log->error('An error occurred while deleting the novel.', ['user_id' => $user_id, 'novel_id' => $delete_id]);
         $_SESSION['error_message'] = 'An error occurred. Please try again later.';
     }
     $stmt->close();
