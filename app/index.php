@@ -13,13 +13,14 @@ function showMessage($message, $type = "error") {
 $errorMessage = $_SESSION['error_message'] ?? null;
 $source = $_SESSION['source'] ?? null;
 $unlockDate = $_SESSION['unlock_date'] ?? null;
+$type = $_SESSION['type'] ?? "error";
 
 if($errorMessage !== null)
-  showMessage($errorMessage);
+  showMessage($errorMessage, $type);
 unset($_SESSION['error_message']);
 unset($_SESSION['source']); 
 unset($_SESSION['unlock_date']);
-
+unset($_SESSION['type']);
 
 ?>
 
