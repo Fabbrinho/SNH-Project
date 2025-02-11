@@ -130,37 +130,24 @@ if ($stmt->num_rows > 0) {
         exit();
     }
 
-    // // Definiamo la durata massima della password (es. 90 giorni)
-    // $max_password_age = 90; // giorni
+    
+    // // Definiamo la durata massima della password in minuti (1 minuto per il test)
+    // $max_password_age_minutes = 1;
 
+    // // Convertiamo la data di cambio password in un oggetto DateTime
     // $password_last_changed = new DateTime($password_changed_at);
     // $current_date = new DateTime();
-    // $interval = $password_last_changed->diff($current_date);
 
-    // // Se la password è più vecchia di 90 giorni, reindirizza al cambio password
-    // if ($interval->days > $max_password_age) {
+    // // Calcoliamo la differenza in minuti
+    // $interval = $current_date->getTimestamp() - $password_last_changed->getTimestamp();
+    // $interval_in_minutes = $interval / 60; // Converte i secondi in minuti
+
+    // // Se la password è più vecchia del limite massimo, reindirizza al cambio password
+    // if ($interval_in_minutes > $max_password_age_minutes) {
     //     $_SESSION['force_password_reset'] = true; // Indica che il reset è obbligatorio
     //     header('Location: force_password_change.php'); // Nuova pagina per il cambio password
     //     exit();
     // }
-
-    // Definiamo la durata massima della password in minuti (1 minuto per il test)
-    $max_password_age_minutes = 1;
-
-    // Convertiamo la data di cambio password in un oggetto DateTime
-    $password_last_changed = new DateTime($password_changed_at);
-    $current_date = new DateTime();
-
-    // Calcoliamo la differenza in minuti
-    $interval = $current_date->getTimestamp() - $password_last_changed->getTimestamp();
-    $interval_in_minutes = $interval / 60; // Converte i secondi in minuti
-
-    // Se la password è più vecchia del limite massimo, reindirizza al cambio password
-    if ($interval_in_minutes > $max_password_age_minutes) {
-        $_SESSION['force_password_reset'] = true; // Indica che il reset è obbligatorio
-        header('Location: force_password_change.php'); // Nuova pagina per il cambio password
-        exit();
-    }
 
 
 
@@ -177,7 +164,21 @@ if ($stmt->num_rows > 0) {
         $_SESSION['username'] = $db_username;
         $_SESSION['is_premium'] = $is_premium;
         $_SESSION['role'] = $role;
-        
+
+            // // Definiamo la durata massima della password (es. 90 giorni)
+        $max_password_age = 90; // giorni
+
+        $password_last_changed = new DateTime($password_changed_at);
+        $current_date = new DateTime();
+        $interval = $password_last_changed->diff($current_date);
+
+        // Se la password è più vecchia di 90 giorni, reindirizza al cambio password
+        if ($interval->days > $max_password_age) {
+            $_SESSION['force_password_reset'] = true; // Indica che il reset è obbligatorio
+            header('Location: force_password_change.php'); // Nuova pagina per il cambio password
+            exit();
+        }
+
         $update_stmt = $conn->prepare('UPDATE Users SET trials = 0, unlocking_date = NULL WHERE id = ?');
         $update_stmt->bind_param('i', $user_id);
         $update_stmt->execute();
