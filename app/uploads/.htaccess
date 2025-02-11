@@ -1,7 +1,20 @@
-# Impedisce l'esecuzione di file PHP nella cartella uploads
+# Impedisce l'esecuzione di file PHP nella directory uploads
 <FilesMatch "\.(php|php5|phps|phtml)$">
     Deny from all
 </FilesMatch>
 
-# Blocca l'accesso diretto ai file
+# Blocca l'accesso diretto a tutti i file della directory
+Order Allow,Deny
+Deny from all
+
+# Consenti l'accesso ai file solo tramite script PHP
+<Files "index.php">
+    Order Allow,Deny
+    Allow from all
+</Files>
+
+# Mostra un errore 403 quando si tenta di accedere ai file
+ErrorDocument 403 "Access Denied"
+
+# Opzione per disabilitare l'indice della directory
 Options -Indexes

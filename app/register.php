@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = bin2hex(random_bytes(16));
 
     // Insert user into the database
-    $stmt = $conn->prepare('INSERT INTO Users (username, email, password_hash, token, is_verified) VALUES (?, ?, ?, ?, 0)');
+    $stmt = $conn->prepare('INSERT INTO Users (username, email, password_hash, token, is_verified, password_changed_at) VALUES (?, ?, ?, ?, 0, NOW())');
     $stmt->bind_param('ssss', $username, $email, $password_hash, $token);
 
     if ($stmt->execute()) {

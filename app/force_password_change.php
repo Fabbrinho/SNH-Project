@@ -11,78 +11,59 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 
 // Create a logger instance
-$log = new Logger('reset_password');
-// Define the log file path
+$log = new Logger('force_password_change');
 $logFile = __DIR__ . '/logs/novelist-app.log';
-// Add a handler to write logs to the specified file
 $log->pushHandler(new StreamHandler($logFile, Level::Debug));
+
+if (!isset($_SESSION['user_id']) || !$_SESSION['force_password_reset']) {
+    header('Location: login.php');
+    exit();
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+        $log->warning('CSRF token verification failed.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die("Something went wrong");
         exit();
-    }    
-    $email = trim($_POST['email']);
-    $token = trim($_POST['token']);
+    }
+
+    $user_id = $_SESSION['user_id'];
     $new_password = trim($_POST['new_password']);
 
-    if (empty($email) || empty($token) || empty($new_password)) {
-        $log->warning('Reset password attempt with empty fields.', ['ip' => $_SERVER['REMOTE_ADDR']]);
-        die('All fields are required!');
+    if (empty($new_password)) {
+        $log->warning('Password change attempt with empty password.', ['ip' => $_SERVER['REMOTE_ADDR']]);
+        die('Password is required!');
         exit();
     }
 
-    // Validate token
-    $stmt = $conn->prepare('SELECT id, reset_expires FROM Users WHERE email = ? AND reset_token = ?');
-    $stmt->bind_param('ss', $email, $token);
-    $stmt->execute();
-    $stmt->store_result();
-
-    if ($stmt->num_rows === 0) {
-        $log->warning('Invalid or expired reset token.', ['ip' => $_SERVER['REMOTE_ADDR']]);
-        die('Invalid or expired token.');
-        exit();
-    }
-
-    $stmt->bind_result($user_id, $reset_expires);
-    $stmt->fetch();
-
-    // Check if token expired
-    if (strtotime($reset_expires) < time()) {
-        $log->warning('Reset token expired.', ['ip' => $_SERVER['REMOTE_ADDR']]);
-        die('Token expired. Please request a new password reset.');
-        exit();
-    }
-
-    // Check password strength using zxcvbn-php
+    // Check password strength
     $zxcvbn = new Zxcvbn();
     $strength = $zxcvbn->passwordStrength($new_password);
 
-    // Define a minimum strength threshold (e.g., score >= 2)
     if ($strength['score'] < 2) {
         $log->warning('Weak password provided.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die('Password is too weak. Please choose a stronger password.');
         exit();
     }
 
-    // Update password
+    // Hash the new password
     $hashed_password = password_hash($new_password, PASSWORD_BCRYPT);
-    $stmt = $conn->prepare('UPDATE Users SET password_hash = ?, password_changed_at = NOW(), reset_token = NULL, reset_expires = NULL WHERE id = ?');
+    $stmt = $conn->prepare('UPDATE Users SET password_hash = ?, password_changed_at = NOW() WHERE id = ?');
     $stmt->bind_param('si', $hashed_password, $user_id);
-    
+
     if ($stmt->execute()) {
-        $log->info('Password reset successfully.', ['ip' => $_SERVER['REMOTE_ADDR']]);
+        unset($_SESSION['force_password_reset']);
+        $log->info('Password successfully updated.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background:rgb(107, 197, 128); color: white; text-align: center; font-weight: bold;'>
-                Password successfully updated! <a href='index.php'>Login</a>
-            </div>";
+                Password successfully updated! <a href='login.php'>Login</a>
+              </div>";
     } else {
         $log->error('Error updating password.', ['ip' => $_SERVER['REMOTE_ADDR']]);
-        echo "div style='padding: 10px; margin: 10px 0; border-radius: 5px; background:rgb(221, 84, 98); color: white; text-align: center; font-weight: bold;'>
+        echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background:rgb(221, 84, 98); color: white; text-align: center; font-weight: bold;'>
                 Error updating password. Please try again.
-            </div>";
-        exit();
+              </div>";
     }
-
+    
     $stmt->close();
 }
 
@@ -93,8 +74,7 @@ $conn->close();
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Reset Password</title>
-    <!-- Include zxcvbn.js for client-side password strength feedback -->
+    <title>Change Password</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
     <style>
         body {
@@ -141,17 +121,6 @@ $conn->close();
         button:hover {
             background-color: #218838;
         }
-        .message {
-            text-align: center;
-            margin-top: 10px;
-        }
-        .message a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        .message a:hover {
-            text-decoration: underline;
-        }
         #password-strength {
             margin-top: 10px;
             font-weight: bold;
@@ -160,22 +129,17 @@ $conn->close();
 </head>
 <body>
     <div class="container">
-        <h2>Reset Password</h2>
-        <form action="reset_password.php" method="POST">
+        <h2>Change Your Password</h2>
+        <p>Your password has expired. Please set a new one to continue.</p>
+        <form action="force_password_change.php" method="POST">
             <input type="hidden" name="token_csrf" value="<?php echo getToken(); ?>">
-            <input type="hidden" name="email" value="<?php echo htmlspecialchars($_GET['email'] ?? ''); ?>">
-            <input type="hidden" name="token" value="<?php echo htmlspecialchars($_GET['token'] ?? ''); ?>">
             <input type="password" name="new_password" id="new_password" required placeholder="Enter new password" oninput="checkPasswordStrength(this.value)">
             <div id="password-strength"></div>
-            <button type="submit">Reset Password</button>
+            <button type="submit">Update Password</button>
         </form>
-        <div class="message">
-            <p>Remembered your password? <a href="login.php">Login here</a></p>
-        </div>
     </div>
 
     <script>
-        // Function to check password strength using zxcvbn.js
         function checkPasswordStrength(password) {
             const strengthText = document.getElementById("password-strength");
             if (password.length === 0) {
@@ -183,7 +147,6 @@ $conn->close();
                 return;
             }
 
-            // Use zxcvbn.js to evaluate password strength
             const result = zxcvbn(password);
             const strength = result.score;
             let message = "";

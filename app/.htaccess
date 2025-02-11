@@ -1,4 +1,0 @@
-<FilesMatch "^(config|csrf|send_email|upload)\.php$">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
