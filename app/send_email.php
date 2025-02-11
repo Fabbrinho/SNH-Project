@@ -25,7 +25,7 @@ function sendEmail($toEmail, $subject, $body, $log) {
     $subject = trim(str_replace(["\r", "\n"], '', $subject));
     $allowed_tags = '<p><br><strong><em><a>';
     $body = strip_tags($body, $allowed_tags);
-    $body = htmlspecialchars($body, ENT_QUOTES, 'UTF-8');
+    ##$body = htmlspecialchars($body, ENT_QUOTES, 'UTF-8');
 
     $mail = new PHPMailer(true);
 
