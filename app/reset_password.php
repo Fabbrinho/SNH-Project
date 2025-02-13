@@ -84,8 +84,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $stmt->close();
+} 
+else {
+    if(!isset($_GET['email']) || !isset($_GET['token']) || !getToken()){
+        $log->warning('Invalid request.', ['ip' => $_SERVER['REMOTE_ADDR']]);
+        header("Location: index.php");
+    }
 }
-
 $conn->close();
 ?>
 

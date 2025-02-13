@@ -29,13 +29,6 @@ $logFile = __DIR__ . '/logs/novelist-app.log';
 // Add a handler to write logs to the specified file
 $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
-// function showMessage($message, $type = "error") {
-//     $color = $type === "success" ? "#28a745" : "#dc3545"; // Green for success, red for error
-//     echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background: $color; color: white; text-align: center; font-weight: bold;'>
-//             $message
-//           </div>";
-// }
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
         die("Something went wrong");
@@ -47,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Validate input fields
     if (empty($username) || empty($email) || empty($password) || empty($recaptcha_response)) {
-        // showMessage("All fields are required!");
         setErrorMessage("All fields are required!");;
         $log->warning('Registration attempt with empty fields.');
         exit();
@@ -59,8 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
     } else {
         // Handle invalid username
-      
-        // showMessage("Invalid username format! The username must contain only letters, numbers, and underscores, and be 3 to 20 characters long.");
         setErrorMessage("Invalid username format! The username must contain only letters, numbers, and underscores, and be 3 to 20 characters long.");
         $log->warning('Invalid username format: ' . $username);
         exit();
@@ -70,7 +60,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Validate email
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        // showMessage("Invalid email format!");
         setErrorMessage("Invalid email format!");
         exit();
     }
@@ -83,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->store_result();
 
     if ($stmt->num_rows > 0) {
-        // showMessage("Registration failed. Please try again.");
         setErrorMessage("Registration failed. Please try again.");
         $log->warning('Username or email already exists: ' . $username . ' / ' . $email);
         exit();
@@ -106,7 +94,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $recaptcha_data = json_decode($recaptcha_verify, true);
 
     if (!$recaptcha_data || !$recaptcha_data['success']) {
-        //showMessage("reCAPTCHA verification failed! Please try again.");
         setErrorMessage("reCAPTCHA verification failed! Please try again.");
         $log->warning('reCAPTCHA verification failed.');
         exit();
@@ -116,7 +103,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $zxcvbn = new Zxcvbn();
     $strength = $zxcvbn->passwordStrength($password);
     if ($strength['score'] < 2) {
-        // showMessage("Password is too weak. Please choose a stronger password.");
         setErrorMessage("Password is too weak. Please choose a stronger password.");
         $log->warning('Weak password chosen.');
         exit();
@@ -139,21 +125,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  <a href='$verificationLink'>$verificationLink</a>";
 
         if (sendEmail($email, $subject, $body, $log)) {
-            // showMessage("Registration successful! Please check your email to verify your account.", "success");
             setErrorMessage("Registration successful! Please check your email to verify your account.", "success");
             $log->info('User registered successfully: ' . $username . ' / ' . $email);
         } else {
-            // showMessage("Error: Unable to send verification email.");
             setErrorMessage("Error: Unable to send verification email.");
             $log->error('Failed to send verification email to: ' . $email);
         }
     } else {
-        // showMessage("Error: " . $stmt->error);
         setErrorMessage("Error: " . $stmt->error);
         $log->error('Database insertion failed: ' . $stmt->error);
     }
 
     $stmt->close();
+} else{
+    $log->warning('Invalid request.', ['ip' => $_SERVER['REMOTE_ADDR']]);
+    header("Location: index.php");
 }
 
 $conn->close();

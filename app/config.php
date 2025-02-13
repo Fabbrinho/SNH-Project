@@ -30,6 +30,5 @@ try {
 } catch (Exception $e) {
     $log->error('Database connection failed: ' . $e->getMessage());
     die('Database connection failed: ' . $e->getMessage());
-    exit();
 }
 ?>
