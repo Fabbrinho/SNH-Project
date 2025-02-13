@@ -43,7 +43,7 @@ if (isset($_GET['email']) && isset($_GET['token'])) {
     $stmt->close();
 } else {
     $log->warning('Invalid request.', ['ip' => $_SERVER['REMOTE_ADDR']]);
-    $message = 'Invalid request.';
+    header("Location: index.php");
 }
 
 $conn->close();
