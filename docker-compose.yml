@@ -15,21 +15,7 @@ services:
       DB_NAME: novelists_db   
     depends_on:
       - mysql
-    command: >
-      sh -c "
-      a2enmod ssl &&
-      a2enmod headers &&
-      cp /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-available/default-ssl.conf.bak &&
-      sed -i 's|SSLCertificateFile.*|SSLCertificateFile /etc/apache2/ssl/selfsigned.crt|' /etc/apache2/sites-available/default-ssl.conf &&
-      sed -i 's|SSLCertificateKeyFile.*|SSLCertificateKeyFile /etc/apache2/ssl/selfsigned.key|' /etc/apache2/sites-available/default-ssl.conf &&
-      echo '<IfModule mod_headers.c>' >> /etc/apache2/conf-available/security.conf &&
-      echo 'Header set X-Frame-Options \"DENY\"' >> /etc/apache2/conf-available/security.conf &&
-      echo '</IfModule>' >> /etc/apache2/conf-available/security.conf &&
-      a2enconf security &&
-      a2ensite default-ssl &&
-      docker-php-ext-install mysqli &&
-      docker-php-ext-enable mysqli &&
-      apache2-foreground"
+   
 
 
   mysql:
