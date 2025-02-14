@@ -19,14 +19,21 @@ WORKDIR /var/www/html
 # Install PHPMailer
 RUN composer require phpmailer/phpmailer
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+# Enable Apache modules
+RUN a2enmod rewrite ssl headers
 
+# Copy Apache configuration files
+COPY apache-config/ssl.conf /etc/apache2/sites-available/ssl.conf
+COPY apache-config/sec.conf /etc/apache2/conf-available/security.conf
+
+# Enable custom configurations
+RUN a2ensite ssl && a2enconf security
+RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
 # Copy application files
 COPY ./app /var/www/html/
 
-# Expose port 80
-EXPOSE 80
+# Expose ports (80 for HTTP, 443 for HTTPS)
+EXPOSE 80 443
 
 # Start Apache server
 CMD ["apache2-foreground"]
