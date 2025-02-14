@@ -15,8 +15,6 @@ services:
       DB_NAME: novelists_db   
     depends_on:
       - mysql
-    command: >
-      sh -c "rm -f /var/www/html/logs/*.log"
    
   mysql:
     image: mysql:8.0
