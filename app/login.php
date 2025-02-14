@@ -14,6 +14,7 @@ $logFile = __DIR__ . '/logs/novelist-app.log';
 // Add a handler to write logs to the specified file
 $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
+ob_start();
 session_start();
 $inactive = 300; // 5 minutes session timeout
 
@@ -54,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+    $log->warning('csrf token error', ['ip' => $_SERVER['REMOTE_ADDR']]);
     die("Something went wrong");
 }
 
@@ -169,34 +171,39 @@ if ($stmt->num_rows > 0) {
         $_SESSION['is_premium'] = $is_premium;
         $_SESSION['role'] = $role;
 
-       // Definiamo la durata massima della password in giorni (90 giorni)
-       $max_password_age_days = 90;
+        // Definiamo la durata massima della password in giorni (90 giorni)
+        $max_password_age_days = 90;
 
-       // Convertiamo la data di cambio password in un oggetto DateTime
-       $password_last_changed = new DateTime($password_changed_at);
-       $current_date = new DateTime();
+        // Convertiamo la data di cambio password in un oggetto DateTime
+        if ($password_changed_at === NULL) {
+            $password_last_changed = new DateTime(); // Use current time as default
+        } else {
+            $password_last_changed = new DateTime($password_changed_at);
+        }
+    
+        $current_date = new DateTime();
    
-       // Calcoliamo la differenza in giorni
-       $interval = $current_date->diff($password_last_changed);
-       $interval_in_days = $interval->days; // Restituisce la differenza in giorni
-   
-       // Se la password è più vecchia del limite massimo, reindirizza al cambio password
-       if ($interval_in_days > $max_password_age_days) {
-           $_SESSION['force_password_reset'] = true; // Indica che il reset è obbligatorio
-           unset($_SESSION['username']);
-           unset($_SESSION['is_premium']);
-           unset($_SESSION['role']);
-           header('Location: force_password_change.php'); // Nuova pagina per il cambio password
-           exit();
-       }
+        // Calcoliamo la differenza in giorni
+        $interval = $current_date->diff($password_last_changed);
+        $interval_in_days = $interval->days; // Restituisce la differenza in giorni
+    
+        // Se la password è più vecchia del limite massimo, reindirizza al cambio password
+        if ($interval_in_days > $max_password_age_days) {
+            $_SESSION['force_password_reset'] = true; // Indica che il reset è obbligatorio
+            unset($_SESSION['username']);
+            unset($_SESSION['is_premium']);
+            unset($_SESSION['role']);
+            header('Location: force_password_change.php'); // Nuova pagina per il cambio password
+            exit();
+        }
+                
+            $update_stmt = $conn->prepare('UPDATE Users SET trials = 0, unlocking_date = NULL WHERE id = ?');
+            $update_stmt->bind_param('i', $user_id);
+            $update_stmt->execute();
+            $log->info('User logged in successfully.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
             
-        $update_stmt = $conn->prepare('UPDATE Users SET trials = 0, unlocking_date = NULL WHERE id = ?');
-        $update_stmt->bind_param('i', $user_id);
-        $update_stmt->execute();
-        $log->info('User logged in successfully.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
-        
-        header('Location: home.php');
-        exit();
+            header('Location: home.php');
+            exit();
     } else {
         $trials ++;
         if(($trials % 3)==0){
@@ -226,6 +233,7 @@ if ($stmt->num_rows > 0) {
     exit();
 }
 
+ob_end_flush();
 $stmt->close();
 $conn->close();
 ?>

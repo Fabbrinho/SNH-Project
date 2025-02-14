@@ -18,7 +18,6 @@ function sendEmail($toEmail, $subject, $body, $log) {
     if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
         $log->warning('Invalid email address.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die("Invalid email address.");
-        exit();
     }
 
     // Sanitizzazione input per prevenire Email Injection

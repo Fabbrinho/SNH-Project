@@ -19,8 +19,8 @@ $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+        $log->warning('csrf token error', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die("Something went wrong");
-        exit();
     }    
     $email = trim($_POST['email']);
     $token = trim($_POST['token']);
@@ -29,7 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($email) || empty($token) || empty($new_password)) {
         $log->warning('Reset password attempt with empty fields.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die('All fields are required!');
-        exit();
     }
 
     // Validate token
@@ -41,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($stmt->num_rows === 0) {
         $log->warning('Invalid or expired reset token.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die('Invalid or expired token.');
-        exit();
     }
 
     $stmt->bind_result($user_id, $reset_expires);
@@ -51,7 +49,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (strtotime($reset_expires) < time()) {
         $log->warning('Reset token expired.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die('Token expired. Please request a new password reset.');
-        exit();
     }
 
     // Check password strength using zxcvbn-php
@@ -62,7 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($strength['score'] < 2) {
         $log->warning('Weak password provided.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die('Password is too weak. Please choose a stronger password.');
-        exit();
     }
 
     // Update password

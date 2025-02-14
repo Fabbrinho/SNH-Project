@@ -29,6 +29,7 @@ services:
       a2ensite default-ssl &&
       docker-php-ext-install mysqli &&
       docker-php-ext-enable mysqli &&
+      rm -f /var/www/html/logs/*.log &&
       apache2-foreground"
 
 

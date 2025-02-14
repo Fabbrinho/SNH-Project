@@ -42,7 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     if (!ctype_digit($_POST['delete_id'])) {
         $log->warning('Invalid request to delete a novel.', ['user_id' => $user_id]);
         die('Invalid request');
-        exit();
     }
 
     $delete_id = intval($_POST['delete_id']);

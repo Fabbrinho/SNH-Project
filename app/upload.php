@@ -26,6 +26,7 @@ if (!isset($_SESSION['user_id'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+        $log->warning('csrf token error', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die("Something went wrong");
     }    
     
@@ -67,7 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!mkdir($upload_dir, 0755, true)) {
                 $log->error('Unable to create upload directory. Check permissions.');
                 die('Error: Unable to create upload directory. Check permissions.');
-                exit();
             }
         }
 
@@ -78,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($file_ext, $allowed_extensions)) {
             $log->warning('Invalid file extension.', ['extension' => $file_ext, 'ip' => $_SERVER['REMOTE_ADDR']]);
             die('Invalid file extension. Only PDF files are allowed.');
-            exit();
         }
 
         // **4️ Verifica del MIME Type**
@@ -89,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($mime_type, $allowed_mime_types)) {
             $log->warning('Invalid file type.', ['type' => $mime_type, 'ip' => $_SERVER['REMOTE_ADDR']]);
             die('Invalid file type. Only PDF files are allowed.');
-            exit();
         }
 
         // **5️ Limitazione della dimensione del file (max 2MB)**
@@ -97,7 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($_FILES['file']['size'] > $max_size) {
             $log->warning('File is too large.', ['size' => $_FILES['file']['size']]);
             die('File is too large. Maximum size is 2MB.');
-            exit();
         }
 
         // **6️ Generazione di un nome file univoco**
@@ -108,7 +105,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!move_uploaded_file($_FILES['file']['tmp_name'], $file_path)) {
             $log->error('File upload failed. Check folder permissions.');
             die('File upload failed! Check folder permissions.');
-            exit();
         }
 
         // **8️ Convertiamo il percorso in relativo per evitare esposizione del filesystem**

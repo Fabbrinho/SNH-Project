@@ -25,19 +25,18 @@ function showMessage($message, $type = "error") {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+        $log->warning('csrf token error', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die("Something went wrong");
     }    
     $email = trim($_POST['email']);
 
     if (empty($email)) {
         die('Email is required!');
-        exit();
     }
 
     // Validate and sanitize email
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         die('Invalid email format!');
-      exit();
     }
     $email = filter_var($email, FILTER_SANITIZE_EMAIL);
   
