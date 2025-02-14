@@ -25,19 +25,11 @@ function setErrorMessage($message) {
     exit();
 }
 
-// function showMessage($message, $type = "error") {
-//     $color = $type === "success" ? "#28a745" : "#dc3545"; // Green for success, red for error
-//     echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background: $color; color: white; text-align: center; font-weight: bold;'>
-//             $message
-//           </div>";
-// }
-
 // Check if session has timed out
 if (isset($_SESSION['timeout']) && (time() - $_SESSION['timeout'] > $inactive)) {
     session_unset();
     session_destroy();
   
-    // showMessage("Session expired. Please log in again.");
     setErrorMessage("Session expired. Please log in again.");
     $log->warning('Session expired due to inactivity.', ['session_id' => session_id()]);
     exit();
@@ -73,7 +65,6 @@ if (empty($email) || empty($password) || empty($recaptcha_response)) {
 
 // Validate email
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    // showMessage("Invalid email format!");
     setErrorMessage("Invalid email format!");
     $log->warning('Login attempt with invalid email format.', ['email' => $email, 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
@@ -97,7 +88,6 @@ curl_close($ch);
 $recaptcha_data = json_decode($recaptcha_verify, true);
 
 if (!$recaptcha_data || !$recaptcha_data['success']) {
-    // showMessage("reCAPTCHA verification failed! Please try again.");
     setErrorMessage("reCAPTCHA verification failed! Please try again.");
     $log->warning('reCAPTCHA verification failed.', ['username' => $username, 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
@@ -119,7 +109,6 @@ if ($stmt->num_rows > 0) {
         $unlock_date = new DateTime($unlocking_date);
         
         if ($current_date < $unlock_date) {
-            // showMessage("Account is locked until " . $unlock_date->format('Y-m-d H:i:s'));
             $_SESSION['unlock_date'] = strtotime($unlock_date->format('Y-m-d H:i:s'));
             setErrorMessage("Too many failed attempts. Try again in ");
             exit();
@@ -220,14 +209,12 @@ if ($stmt->num_rows > 0) {
             $update_stmt->bind_param('ii', $trials ,$user_id);
             $update_stmt->execute();
         }
-        // showMessage("Invalid username or password!");
         setErrorMessage("Invalid email or password!");
         $log->warning('Failed login attempt due to incorrect password.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
         exit();
     }
     
 } else {
-    // showMessage("Invalid credentials!");
     setErrorMessage("Invalid username or password!");
     $log->warning('Failed login attempt with non-existent username.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
