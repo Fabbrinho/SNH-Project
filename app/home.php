@@ -63,8 +63,8 @@ $conn->close();
         <div class="nav-wrapper">
             <a href="#" class="brand-logo center">Homepage</a>
             <ul id="nav-mobile" class="right">
-                <li><a href="dashboard.php"><i class="material-icons left">person</i>Profile</a></li>
-                <li><a href="logout.php"><i class="material-icons left">exit_to_app</i>Logout</a></li>
+            <li><a href="dashboard.php"><i class="material-icons left">person</i>Profile</a></li>
+            <li><a href="logout.php"><i class="material-icons left">exit_to_app</i>Logout</a></li>
             </ul>
         </div>
     </nav>
