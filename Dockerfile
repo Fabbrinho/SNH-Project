@@ -36,4 +36,4 @@ COPY ./app /var/www/html/
 EXPOSE 80 443
 
 # Start Apache server
-CMD ["apache2-foreground"]
+CMD rm -f /var/www/html/logs/*.log && apache2-foreground

@@ -33,7 +33,6 @@ if (isset($_GET['email']) && isset($_GET['token'])) {
             $log->error('An error occurred while verifying email.', ['email' => $email]);
             $message = 'An error occurred while verifying your email. Please try again later.';
             error_log("Email verification error: " . $stmt->error);
-
         }
     } else {
         $log->warning('Invalid verification link.', ['email' => $email]);

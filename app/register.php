@@ -31,6 +31,7 @@ $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+        $log->warning('csrf token error', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die("Something went wrong");
     }    
     $username = trim($_POST['username'] ?? '');

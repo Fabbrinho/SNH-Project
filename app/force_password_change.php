@@ -24,7 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
         $log->warning('CSRF token verification failed.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die("Something went wrong");
-        exit();
     }
 
     $user_id = $_SESSION['user_id'];
@@ -33,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($new_password)) {
         $log->warning('Password change attempt with empty password.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die('Password is required!');
-        exit();
     }
 
     // Check password strength
@@ -43,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($strength['score'] < 2) {
         $log->warning('Weak password provided.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die('Password is too weak. Please choose a stronger password.');
-        exit();
     }
 
     // Hash the new password

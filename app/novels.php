@@ -60,7 +60,6 @@ if ($novel['type'] == 'full') {
         if ($real_path === false || strpos($real_path, realpath($upload_dir)) !== 0) {
             $log->warning('Invalid file path', ['user_id' => $_SESSION['user_id'], 'novel_id' => $novel_id]);
             die('Invalid file request.');
-            exit();
         }
         
         $log->info('Novel downloaded', ['user_id' => $_SESSION['user_id'], 'novel_id' => $novel_id]);

@@ -14,6 +14,7 @@ $logFile = __DIR__ . '/logs/novelist-app.log';
 // Add a handler to write logs to the specified file
 $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
+ob_start();
 session_start();
 $inactive = 300; // 5 minutes session timeout
 
@@ -24,19 +25,11 @@ function setErrorMessage($message) {
     exit();
 }
 
-// function showMessage($message, $type = "error") {
-//     $color = $type === "success" ? "#28a745" : "#dc3545"; // Green for success, red for error
-//     echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background: $color; color: white; text-align: center; font-weight: bold;'>
-//             $message
-//           </div>";
-// }
-
 // Check if session has timed out
 if (isset($_SESSION['timeout']) && (time() - $_SESSION['timeout'] > $inactive)) {
     session_unset();
     session_destroy();
   
-    // showMessage("Session expired. Please log in again.");
     setErrorMessage("Session expired. Please log in again.");
     $log->warning('Session expired due to inactivity.', ['session_id' => session_id()]);
     exit();
@@ -54,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
+    $log->warning('csrf token error', ['ip' => $_SERVER['REMOTE_ADDR']]);
     die("Something went wrong");
 }
 
@@ -71,7 +65,6 @@ if (empty($email) || empty($password) || empty($recaptcha_response)) {
 
 // Validate email
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    // showMessage("Invalid email format!");
     setErrorMessage("Invalid email format!");
     $log->warning('Login attempt with invalid email format.', ['email' => $email, 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
@@ -95,7 +88,6 @@ curl_close($ch);
 $recaptcha_data = json_decode($recaptcha_verify, true);
 
 if (!$recaptcha_data || !$recaptcha_data['success']) {
-    // showMessage("reCAPTCHA verification failed! Please try again.");
     setErrorMessage("reCAPTCHA verification failed! Please try again.");
     $log->warning('reCAPTCHA verification failed.', ['username' => $username, 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
@@ -117,7 +109,6 @@ if ($stmt->num_rows > 0) {
         $unlock_date = new DateTime($unlocking_date);
         
         if ($current_date < $unlock_date) {
-            // showMessage("Account is locked until " . $unlock_date->format('Y-m-d H:i:s'));
             $_SESSION['unlock_date'] = strtotime($unlock_date->format('Y-m-d H:i:s'));
             setErrorMessage("Too many failed attempts. Try again in ");
             exit();
@@ -169,34 +160,39 @@ if ($stmt->num_rows > 0) {
         $_SESSION['is_premium'] = $is_premium;
         $_SESSION['role'] = $role;
 
-       // Definiamo la durata massima della password in giorni (90 giorni)
-       $max_password_age_days = 90;
+        // Definiamo la durata massima della password in giorni (90 giorni)
+        $max_password_age_days = 90;
 
-       // Convertiamo la data di cambio password in un oggetto DateTime
-       $password_last_changed = new DateTime($password_changed_at);
-       $current_date = new DateTime();
+        // Convertiamo la data di cambio password in un oggetto DateTime
+        if ($password_changed_at === NULL) {
+            $password_last_changed = new DateTime(); // Use current time as default
+        } else {
+            $password_last_changed = new DateTime($password_changed_at);
+        }
+    
+        $current_date = new DateTime();
    
-       // Calcoliamo la differenza in giorni
-       $interval = $current_date->diff($password_last_changed);
-       $interval_in_days = $interval->days; // Restituisce la differenza in giorni
-   
-       // Se la password è più vecchia del limite massimo, reindirizza al cambio password
-       if ($interval_in_days > $max_password_age_days) {
-           $_SESSION['force_password_reset'] = true; // Indica che il reset è obbligatorio
-           unset($_SESSION['username']);
-           unset($_SESSION['is_premium']);
-           unset($_SESSION['role']);
-           header('Location: force_password_change.php'); // Nuova pagina per il cambio password
-           exit();
-       }
+        // Calcoliamo la differenza in giorni
+        $interval = $current_date->diff($password_last_changed);
+        $interval_in_days = $interval->days; // Restituisce la differenza in giorni
+    
+        // Se la password è più vecchia del limite massimo, reindirizza al cambio password
+        if ($interval_in_days > $max_password_age_days) {
+            $_SESSION['force_password_reset'] = true; // Indica che il reset è obbligatorio
+            unset($_SESSION['username']);
+            unset($_SESSION['is_premium']);
+            unset($_SESSION['role']);
+            header('Location: force_password_change.php'); // Nuova pagina per il cambio password
+            exit();
+        }
+                
+            $update_stmt = $conn->prepare('UPDATE Users SET trials = 0, unlocking_date = NULL WHERE id = ?');
+            $update_stmt->bind_param('i', $user_id);
+            $update_stmt->execute();
+            $log->info('User logged in successfully.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
             
-        $update_stmt = $conn->prepare('UPDATE Users SET trials = 0, unlocking_date = NULL WHERE id = ?');
-        $update_stmt->bind_param('i', $user_id);
-        $update_stmt->execute();
-        $log->info('User logged in successfully.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
-        
-        header('Location: home.php');
-        exit();
+            header('Location: home.php');
+            exit();
     } else {
         $trials ++;
         if(($trials % 3)==0){
@@ -213,19 +209,18 @@ if ($stmt->num_rows > 0) {
             $update_stmt->bind_param('ii', $trials ,$user_id);
             $update_stmt->execute();
         }
-        // showMessage("Invalid username or password!");
         setErrorMessage("Invalid email or password!");
         $log->warning('Failed login attempt due to incorrect password.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
         exit();
     }
     
 } else {
-    // showMessage("Invalid credentials!");
     setErrorMessage("Invalid username or password!");
     $log->warning('Failed login attempt with non-existent username.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
 }
 
+ob_end_flush();
 $stmt->close();
 $conn->close();
 ?>
