@@ -29,8 +29,14 @@ COPY apache-config/sec.conf /etc/apache2/conf-available/security.conf
 # Enable custom configurations
 RUN a2ensite ssl && a2enconf security
 RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
+
 # Copy application files
 COPY ./app /var/www/html/
+
+# Creazione della cartella logs e impostazione dei permessi
+RUN mkdir -p /var/www/html/logs && \
+    chown -R www-data:www-data /var/www/html/logs && \
+    chmod -R 755 /var/www/html/logs
 
 # Expose ports (80 for HTTP, 443 for HTTPS)
 EXPOSE 80 443
