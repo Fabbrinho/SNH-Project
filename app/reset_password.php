@@ -16,6 +16,14 @@ $log = new Logger('reset_password');
 $logFile = __DIR__ . '/logs/novelist-app.log';
 // Add a handler to write logs to the specified file
 $log->pushHandler(new StreamHandler($logFile, Level::Debug));
+function setErrorMessage($message) {
+    $_SESSION['error_message'] = $message;
+    $_SESSION['source'] = "LOGIN";
+    $_SESSION['type'] = "success";
+    header('Location: index.php'); // Reindirizza l'utente alla pagina di login
+    exit();
+}
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
@@ -68,9 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($stmt->execute()) {
         $log->info('Password reset successfully.', ['ip' => $_SERVER['REMOTE_ADDR']]);
-        echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background:rgb(107, 197, 128); color: white; text-align: center; font-weight: bold;'>
-                Password successfully updated! <a href='index.php'>Login</a>
-            </div>";
+        setErrorMessage('Password reset successfully');
     } else {
         $log->error('Error updating password.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background:rgb(221, 84, 98); color: white; text-align: center; font-weight: bold;'>

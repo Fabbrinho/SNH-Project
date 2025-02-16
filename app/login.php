@@ -159,6 +159,10 @@ if ($stmt->num_rows > 0) {
         $_SESSION['username'] = $db_username;
         $_SESSION['is_premium'] = $is_premium;
         $_SESSION['role'] = $role;
+            
+        $update_stmt = $conn->prepare('UPDATE Users SET trials = 0, unlocking_date = NULL WHERE id = ?');
+        $update_stmt->bind_param('i', $user_id);
+        $update_stmt->execute();
 
         // Definiamo la durata massima della password in giorni (90 giorni)
         $max_password_age_days = 90;
@@ -185,14 +189,9 @@ if ($stmt->num_rows > 0) {
             header('Location: force_password_change.php'); // Nuova pagina per il cambio password
             exit();
         }
-                
-            $update_stmt = $conn->prepare('UPDATE Users SET trials = 0, unlocking_date = NULL WHERE id = ?');
-            $update_stmt->bind_param('i', $user_id);
-            $update_stmt->execute();
-            $log->info('User logged in successfully.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
-            
-            header('Location: home.php');
-            exit();
+        $log->info('User logged in successfully.', ['username' => $db_username, 'ip' => $_SERVER['REMOTE_ADDR']]);
+        header('Location: home.php');
+        exit();
     } else {
         $trials ++;
         if(($trials % 3)==0){
