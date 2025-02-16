@@ -135,11 +135,12 @@ unset($_SESSION['type']);
         const passwordStrength = document.createElement("div");
         passwordStrength.id = "password-strength";
         form.appendChild(passwordStrength);
-
+        form.appendChild(document.createElement("br"));
         // reCAPTCHA
         const recaptchaContainer = document.createElement("div");
         recaptchaContainer.id = "recaptcha-register";
         form.appendChild(recaptchaContainer);
+        form.appendChild(document.createElement("br"));
         
         const submitButton = document.createElement("button");
         submitButton.type = "submit";
@@ -178,6 +179,7 @@ unset($_SESSION['type']);
         const recaptchaContainer = document.createElement("div");
         recaptchaContainer.id = "recaptcha-login";
         form.appendChild(recaptchaContainer);
+        form.appendChild(document.createElement("br"));
         
         const submitButton = document.createElement("button");
         submitButton.type = "submit";
@@ -213,26 +215,25 @@ unset($_SESSION['type']);
       window.onload = function() { showRegisterForm(); };
     <?php endif; ?>
     function checkPasswordStrength(password) {
-        const strengthText = document.getElementById("password-strength");
-        if (password.length === 0) {
-            strengthText.innerHTML = "";
-            return;
-        }
+      const strengthText = document.getElementById("password-strength");
+      if (password.length === 0) {
+          strengthText.innerHTML = "";
+          return;
+      }
 
-        const result = zxcvbn(password);
-        const strength = result.score;
-        let message = "";
-        let color = "red";
+      let result = zxcvbn(password);
+        let score = result.score;
+        let messages = [
+            "Too weak!",
+            "Weak",
+            "Moderate",
+            "Strong",
+            "Very strong!"
+        ];
+        let colors = ["red", "orange", "yellow", "blue", "green"];
 
-        switch (strength) {
-            case 0: message = "Very Weak"; break;
-            case 1: message = "Weak"; break;
-            case 2: message = "Moderate"; color = "orange"; break;
-            case 3: message = "Strong"; color = "green"; break;
-            case 4: message = "Very Strong"; color = "darkgreen"; break;
-        }
-
-        strengthText.innerHTML = `<span style="color: ${color};">${message}</span>`;
+        strengthText.textContent = messages[score];
+        strengthText.className = colors[score] + "-text";
     }
 
     function recaptchaLoginVerified() {

@@ -73,18 +73,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>";
     } else {
         $log->error('Error updating password.', ['ip' => $_SERVER['REMOTE_ADDR']]);
-        echo "div style='padding: 10px; margin: 10px 0; border-radius: 5px; background:rgb(221, 84, 98); color: white; text-align: center; font-weight: bold;'>
+        echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background:rgb(221, 84, 98); color: white; text-align: center; font-weight: bold;'>
                 Error updating password. Please try again.
             </div>";
         exit();
     }
 
     $stmt->close();
-} 
+}
 else {
     if(!isset($_GET['email']) || !isset($_GET['token']) || !getToken()){
         $log->warning('Invalid request.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         header("Location: index.php");
+    }
+
+    $email = trim($_GET['email']);
+    $token = trim($_GET['token']);
+
+    // Validate token
+    $stmt = $conn->prepare('SELECT id, reset_expires FROM Users WHERE email = ? AND reset_token = ?');
+    $stmt->bind_param('ss', $email, $token);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows === 0) {
+        $log->warning('Invalid or expired reset token.', ['ip' => $_SERVER['REMOTE_ADDR']]);
+        die('Invalid or expired token.');
+    }
+
+    $stmt->bind_result($user_id, $reset_expires);
+    $stmt->fetch();
+
+    // Check if token expired
+    if (strtotime($reset_expires) < time()) {
+        $log->warning('Reset token expired.', ['ip' => $_SERVER['REMOTE_ADDR']]);
+        echo "<div style='padding: 10px; margin: 10px 0; border-radius: 5px; background:rgb(221, 84, 98); color: white; text-align: center; font-weight: bold;'>
+                Token expired. Please request a new password reset.
+            </div>";
+        exit();
     }
 }
 $conn->close();
