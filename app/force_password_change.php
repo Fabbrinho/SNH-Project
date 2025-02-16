@@ -15,7 +15,7 @@ $log = new Logger('force_password_change');
 $logFile = __DIR__ . '/logs/novelist-app.log';
 $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
-if (!isset($_SESSION['user_id']) || !$_SESSION['force_password_reset']) {
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['force_password_reset'])) {
     header('Location: login.php');
     exit();
 }
