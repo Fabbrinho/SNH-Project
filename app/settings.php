@@ -11,8 +11,14 @@ use Monolog\Level;
 function setErrorMessage($message, $type = "error") {
     $_SESSION['error_message'] = $message;
     $_SESSION['type'] = $type;
-    $_SESSION['source'] = "SETTINGS";
 }
+
+// function setErrorMessage($message, $type = "error") {
+//     $color = $type === "success" ? "rgb(107, 197, 128)" : "rgb(221, 84, 98)"; // Green for success, red for error
+//     echo "<div id='error' style='padding: 10px; margin: 10px 0; border-radius: 5px; background: $color; color: white; text-align: center; font-weight: bold;'>
+//             $message <span id='countdown-timer'></span>
+//           </div>";
+// }
 
 $log = new Logger('user_settings');
 $logFile = __DIR__ . '/logs/novelist-app.log';
@@ -52,42 +58,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($current_password) || empty($new_password) || empty($confirm_password)) {
         setErrorMessage("All fields are required!");
-    }
-
-    if ($new_password !== $confirm_password) {
+    } else if ($new_password !== $confirm_password) {
         setErrorMessage("Passwords do not match.");
-    }
+    } else{
+        $stmt = $conn->prepare("SELECT password_hash, trials, unlocking_date FROM Users WHERE id = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $stmt->bind_result($password_hash, $trials, $unlocking_date);
+        $stmt->fetch();
+        $stmt->close();
 
-    $stmt = $conn->prepare("SELECT password_hash FROM Users WHERE id = ?");
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $stmt->bind_result($password_hash);
-    $stmt->fetch();
-    $stmt->close();
-
-    if (!password_verify($current_password, $password_hash)) {
-        setErrorMessage("Incorrect current password.");
-    }
+        if (($trials % 3) === 0 && $unlocking_date!== NULL) {
+            $current_date = new DateTime();
+            $unlock_date = new DateTime($unlocking_date);
+            
+            if ($current_date < $unlock_date) {
+                $_SESSION['unlock_date'] = strtotime($unlock_date->format('Y-m-d H:i:s'));
+                setErrorMessage("Too many failed attempts. Try again in ");
+            }
+        } else if (!password_verify($current_password, $password_hash)) {
+            $trials ++;
+            if(($trials % 3)==0){
+                $log->info('Login Locking due to retry limit reach.', ['username' => $user_id, 'ip' => $_SERVER['REMOTE_ADDR']]);
+                $lock_duration = min(5 * pow(2, $trials), 86400);
+                $new_unlocking_date = (new DateTime())->modify("+$lock_duration seconds")->format('Y-m-d H:i:s');
     
-    $zxcvbn = new Zxcvbn();
-    $strength = $zxcvbn->passwordStrength($new_password);
-    if ($strength['score'] < 2) {
-        setErrorMessage("Password is too weak. Please choose a stronger password.");
+                $update_stmt = $conn->prepare('UPDATE Users SET trials = ?, unlocking_date = ? WHERE id = ?');
+                $update_stmt->bind_param('isi', $trials, $new_unlocking_date,$user_id);
+                $update_stmt->execute();
+            }else{
+                $log->info('Increasing login retry counter.', ['username' => $user_id, 'ip' => $_SERVER['REMOTE_ADDR']]);
+                $update_stmt = $conn->prepare('UPDATE Users SET trials = ?, unlocking_date = NULL WHERE id = ?');
+                $update_stmt->bind_param('ii', $trials ,$user_id);
+                $update_stmt->execute();
+            }
+            setErrorMessage("Incorrect current password.");
+        } else {
+            $zxcvbn = new Zxcvbn();
+            $strength = $zxcvbn->passwordStrength($new_password);
+            if ($strength['score'] < 2) {
+                setErrorMessage("Password is too weak. Please choose a stronger password.");
+            }
+            else if (password_verify($new_password, $password_hash)){
+                setErrorMessage("You can't use the same password. ");
+            } else{
+                $new_password_hash = password_hash($new_password, PASSWORD_BCRYPT);
+                $stmt = $conn->prepare("UPDATE Users SET password_hash = ?, password_changed_at = NOW(), trials = 0, unlocking_date = NULL WHERE id = ?");
+                $stmt->bind_param("si", $new_password_hash, $user_id);
+                if ($stmt->execute()) {
+                    setErrorMessage("Password updated successfully!", "success");
+                    $log->info('User changed password successfully: ' . $user_id);
+                } else {
+                    setErrorMessage("Error: " . $stmt->error);
+                    $log->error('Password update failed: ' . $stmt->error);
+                }
+                $stmt->close();
+            } 
+        }
     }
-
-    $new_password_hash = password_hash($new_password, PASSWORD_BCRYPT);
-    $stmt = $conn->prepare("UPDATE Users SET password_hash = ?, password_changed_at = NOW() WHERE id = ?");
-    $stmt->bind_param("si", $new_password_hash, $user_id);
-
-    if ($stmt->execute()) {
-        setErrorMessage("Password updated successfully!", "success");
-        $log->info('User changed password successfully: ' . $user_id);
-    } else {
-        setErrorMessage("Error: " . $stmt->error);
-        $log->error('Password update failed: ' . $stmt->error);
-    }
-
-    $stmt->close();
 }
 
 $conn->close();
@@ -130,11 +158,13 @@ $conn->close();
 
     <div class="container">
         <h4 class="center">Change Password</h4>
-        <?php if (isset($_SESSION['error_message'])): ?>
-            <div class="card-panel <?php echo $_SESSION['type'] === 'success' ? 'green' : 'red'; ?> lighten-3 center">
+       <?php if (isset($_SESSION['error_message'])): ?>
+            <div id="error" class="card-panel <?php echo $_SESSION['type'] === 'success' ? 'green' : 'red'; ?> lighten-3 center">
                 <?php echo htmlspecialchars($_SESSION['error_message']); ?>
+                <span id='countdown-timer'></span>
             </div>
             <?php unset($_SESSION['error_message']); ?>
+            <?php unset($_SESSION['type']); ?>
         <?php endif; ?>
 
         <div class="card-panel">
@@ -197,6 +227,33 @@ $conn->close();
             strengthText.textContent = messages[score];
             strengthText.className = colors[score] + "-text";
         }
+
+    <?php if (isset($_SESSION['unlock_date'])): ?>
+      const unlockTimestamp = <?php echo $_SESSION['unlock_date'] * 1000; ?>;
+      const countdownElement = document.getElementById("countdown-timer");
+      const countdownContainer = document.getElementById("error");
+
+      function updateCountdown() {
+          const now = new Date().getTime();
+          const timeLeft = unlockTimestamp - now;
+
+          if (timeLeft <= 0) {
+              countdownContainer.style.display = "none";
+              return;
+          }
+
+          const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+          countdownElement.textContent = `${minutes}m ${seconds}s`;
+          countdownContainer.style.display = "block";
+
+          setTimeout(updateCountdown, 1000);
+      }
+
+      updateCountdown();
+    <?php unset($_SESSION['unlock_date']); ?>
+    <?php endif; ?>
     </script>
 </body>
 </html>
