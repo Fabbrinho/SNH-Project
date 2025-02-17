@@ -1,6 +1,13 @@
 <?php 
 session_start();
-require_once 'csrf.php'; 
+require_once 'csrf.php';
+require_once 'vendor/autoload.php'; // Ensure Dotenv is loaded
+
+use Dotenv\Dotenv;
+$dotenv = Dotenv::createImmutable(__DIR__);
+$dotenv->load(); 
+
+$recaptcha_site_key = $_ENV['RECAPTCHA_V2_SITEKEY'];
 $csrfToken = getToken();
 
 function showMessage($message, $type = "error") {
@@ -76,8 +83,7 @@ unset($_SESSION['type']);
   </div>
 
   <script>
-    const RECAPTCHA_SITE_KEY = "6LdAqcsqAAAAAIA_1xSmHxjA6CwOKXyUyrX5RGEY";
-
+    const RECAPTCHA_SITE_KEY = "<?php echo $recaptcha_site_key; ?>";
     const csrfToken = "<?php echo $csrfToken; ?>";
     function createInputField(id, name, type, labelText) {
         const fieldContainer = document.createElement("div");
