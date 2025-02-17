@@ -26,6 +26,8 @@ RUN a2enmod rewrite ssl headers
 COPY apache-config/ssl.conf /etc/apache2/sites-available/ssl.conf
 COPY apache-config/sec.conf /etc/apache2/conf-available/security.conf
 
+COPY php/php.ini /usr/local/etc/php/php.ini
+
 # Enable custom configurations
 RUN a2ensite ssl && a2enconf security
 RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
