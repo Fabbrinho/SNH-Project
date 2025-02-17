@@ -16,6 +16,22 @@ $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 session_start();
 $inactive = 300; // 5 minutes
 
+function showMessage($message, $type = "error") {
+    $color = $type === "success" ? "#28a745" : "#dc3545"; 
+    echo "<div id='error' style='padding: 10px; margin: 10px 0; border-radius: 5px; background: $color; color: white; text-align: center; font-weight: bold;'>
+            $message <span id='countdown-timer'></span>
+          </div>";
+}
+
+$errorMessage = $_SESSION['error_message'] ?? null;
+$type = $_SESSION['type'] ?? "error";
+
+if ($errorMessage !== null) {
+    showMessage($errorMessage, $type);
+}
+unset($_SESSION['error_message']);
+unset($_SESSION['type']);
+
 // Check if the session has timed out
 if (isset($_SESSION['timeout']) && (time() - $_SESSION['timeout'] > $inactive)) {
     $log->warning('Session expired due to inactivity.', ['session_id' => session_id(), 'username' => $_SESSION['username']]);

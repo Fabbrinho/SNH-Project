@@ -21,6 +21,21 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
     exit();
 }
+function showMessage($message, $type = "error") {
+    $color = $type === "success" ? "#28a745" : "#dc3545"; 
+    echo "<div id='error' style='padding: 10px; margin: 10px 0; border-radius: 5px; background: $color; color: white; text-align: center; font-weight: bold;'>
+            $message <span id='countdown-timer'></span>
+          </div>";
+}
+
+$errorMessage = $_SESSION['error_message'] ?? null;
+$type = $_SESSION['type'] ?? "error";
+
+if ($errorMessage !== null) {
+    showMessage($errorMessage, $type);
+}
+unset($_SESSION['error_message']);
+unset($_SESSION['type']);
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -50,16 +65,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case UPLOAD_ERR_INI_SIZE:
             case UPLOAD_ERR_FORM_SIZE:
                 $log->warning('File is too large.', ['size' => $_FILES['file']['size']]);
-                die('File is too large. Maximum size is 2MB.');
+                $_SESSION['error_message'] = "File is too large. Maximum size is 2MB.";
+                $_SESSION['type'] = "error";  // Specifica che è un errore
+            
+                header('Location: dashboard.php');  // Torna alla pagina di upload
+                exit();
             case UPLOAD_ERR_PARTIAL:
                 $log->warning('The file was only partially uploaded.');
-                die('The file was only partially uploaded.');
+                $_SESSION['error_message'] = "The file was only partially uploaded.";
+                $_SESSION['type'] = "error";  // Specifica che è un errore
+            
+                header('Location: dashboard.php');  // Torna alla pagina di upload
+                exit();
             case UPLOAD_ERR_NO_FILE:
                 $log->warning('No file was uploaded.');
-                die('No file was uploaded.');
+                $_SESSION['error_message'] = "No file was uploaded.";
+                $_SESSION['type'] = "error";  // Specifica che è un errore
+            
+                header('Location: dashboard.php');  // Torna alla pagina di upload
+                exit();
             default:
                 $log->error('An unknown error occurred during file upload.');
-                die('An unknown error occurred during file upload.');
+                $_SESSION['error_message'] = "An unknown error occurred during file upload..";
+                $_SESSION['type'] = "error";  // Specifica che è un errore
+            
+                header('Location: dashboard.php');  // Torna alla pagina di upload
+                exit();
         }
         
         // **2️ Creazione sicura della cartella uploads**
@@ -94,8 +125,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $max_size = 2 * 1024 * 1024; // 2MB
         if ($_FILES['file']['size'] > $max_size) {
             $log->warning('File is too large.', ['size' => $_FILES['file']['size']]);
-            die('File is too large. Maximum size is 2MB.');
+        
+            $_SESSION['error_message'] = "File is too large. Maximum size is 2MB.";
+            $_SESSION['type'] = "error";  // Specifica che è un errore
+        
+            header('Location: upload.php');  // Torna alla pagina di upload
+            exit();
         }
+        
 
         // **6️ Generazione di un nome file univoco**
         $file_name = uniqid() . '_' . basename($_FILES['file']['name']);
