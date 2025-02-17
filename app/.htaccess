@@ -33,4 +33,8 @@
     Deny from all
 </Files>
 
+<IfModule mod_headers.c>
+    Header set Content-Security-Policy "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/;"
+</IfModule>
+
 
