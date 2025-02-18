@@ -11,16 +11,15 @@ $dotenv->load();
 
 // Function to send email
 function sendEmail($toEmail, $subject, $body, $log) {
-    // Validazione indirizzo email -> FILTER_VALIDATE_EMAIL
-    //Ha un formato valido di email (esempio: utente@example.com)
-    //Non contiene caratteri proibiti (come \n, \r, <script> ecc.)
-    //Ha un dominio e un nome utente conformi alla RFC 5322
+    // Email address validation -> FILTER_VALIDATE_EMAIL
+// Has a valid email format (e.g., user@example.com)
+// Does not contain prohibited characters (such as \n, \r, <script>, etc.)
+// Has a domain and username compliant with RFC 5322
     if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
         $log->warning('Invalid email address.', ['ip' => $_SERVER['REMOTE_ADDR']]);
         die("Invalid email address.");
     }
 
-    // Sanitizzazione input per prevenire Email Injection
     $subject = trim(str_replace(["\r", "\n"], '', $subject));
     $allowed_tags = '<p><br><strong><em><a>';
     $body = strip_tags($body, $allowed_tags);

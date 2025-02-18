@@ -14,14 +14,12 @@ $logFile = __DIR__ . '/logs/novelist-app.log';
 // Add a handler to write logs to the specified file
 $log->pushHandler(new StreamHandler($logFile, Level::Debug));
 
-// Verifica se l'utente è loggato e se è un admin
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header('Location: index.php');
     $log->critical('Unauthorized access attempt to admin panel.', ['ip' => $_SERVER['REMOTE_ADDR']]);
     exit();
 }
 
-// Se viene inviata una richiesta POST per cambiare il privilegio
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
         die("Something went wrong"); 
@@ -30,7 +28,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
     $user_id = intval($_POST['user_id']);
     $new_status = isset($_POST['is_premium']) ? 1 : 0;
 
-    // Verifica che l’utente sia effettivamente un utente normale e non un admin (un admin non può modificare un altro admin)
     $stmt = $conn->prepare("SELECT id FROM Users WHERE id = ? AND role = 'user'");
     $stmt->bind_param('i', $user_id);
     $stmt->execute();
@@ -61,7 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
     exit();
 }
 
-// Recupera tutti gli utenti tranne gli admin
 $stmt = $conn->prepare("SELECT id, username, email, is_premium FROM Users WHERE role = 'user'");
 $stmt->execute();
 $result = $stmt->get_result();

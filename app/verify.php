@@ -96,8 +96,6 @@ $conn->close();
 <body>
     <div class="container">
         <h2>Email Verification</h2>
-        <!-- Aggiungo controllo per XSS anche se non contiene input dell'utente 
-         -->
         <p><?php echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?></p>
         <form action="index.php">
             <button type="submit">Go to Login Page</button>

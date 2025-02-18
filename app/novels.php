@@ -27,7 +27,6 @@ if (!isset($_GET['id']) || !ctype_digit($_GET['id'])) {
 }
 $novel_id = intval($_GET['id']);
 
-// Query per recuperare la novel
 $sql = "SELECT title, type, content, file_path FROM Novels WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $novel_id);
@@ -41,15 +40,12 @@ if (!$novel) {
     exit();
 }
 
-// Se la novel è di tipo 'full', procedi con il download
 if ($novel['type'] == 'full') {
     $file_path = $novel['file_path'];
 
-    // Verifica che il file esista e sia leggibile
     if (file_exists($file_path) && is_readable($file_path)) {
         $filename = str_replace(" ", "_", $novel['title']) . ".pdf"; // Nome del file
 
-        // Imposta gli header per il download
         header('Content-Description: File Transfer');
         header('Content-Type: application/octet-stream'); // Forza il download
         header('Content-Disposition: attachment; filename="' . $filename . '"'); // Nome del file da scaricare
@@ -63,10 +59,9 @@ if ($novel['type'] == 'full') {
         }
         
         $log->info('Novel downloaded', ['user_id' => $_SESSION['user_id'], 'novel_id' => $novel_id]);
-        // Legge il file e lo invia al browser
         readfile($file_path);
 
-        exit(); // Fermare l'esecuzione del codice per evitare output aggiuntivo
+        exit(); 
     } else {
         die('File non trovato o non leggibile!');
     }

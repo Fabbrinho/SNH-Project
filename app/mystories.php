@@ -118,7 +118,6 @@ $conn->close();
         <div class="section">
             <h3 class="center">Your Published Stories</h3>
             
-            <!-- Messaggi di successo o errore -->
             <?php if (isset($_SESSION['success_message'])): ?>
                 <div class="card-panel green lighten-4"><?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?></div>
             <?php endif; ?>

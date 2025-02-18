@@ -20,7 +20,7 @@ function setErrorMessage($message) {
     $_SESSION['error_message'] = $message;
     $_SESSION['source'] = "LOGIN";
     $_SESSION['type'] = "success";
-    header('Location: index.php'); // Reindirizza l'utente alla pagina di login
+    header('Location: index.php'); 
     exit();
 }
 
@@ -127,7 +127,6 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <title>Reset Password</title>
-    <!-- Include zxcvbn.js for client-side password strength feedback -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
     <style>
         body {

@@ -21,28 +21,16 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: index.php');
     exit();
 }
-function showMessage($message, $type = "error") {
-    $color = $type === "success" ? "#28a745" : "#dc3545"; 
-    echo "<div id='error' style='padding: 10px; margin: 10px 0; border-radius: 5px; background: $color; color: white; text-align: center; font-weight: bold;'>
-            $message <span id='countdown-timer'></span>
-          </div>";
-}
-
-$errorMessage = $_SESSION['error_message'] ?? null;
-$type = $_SESSION['type'] ?? "error";
-
-if ($errorMessage !== null) {
-    showMessage($errorMessage, $type);
-}
-unset($_SESSION['error_message']);
-unset($_SESSION['type']);
-
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!isset($_POST['token_csrf']) || !verifyToken($_POST['token_csrf'])) {
         $log->warning('csrf token error', ['ip' => $_SERVER['REMOTE_ADDR']]);
-        die("Something went wrong");
+        $_SESSION['error_message'] = "Something went wrong";
+        $_SESSION['type'] = "error";  
+    
+        header('Location: dashboard.php');  
+        exit();
     }    
     
     $title = htmlspecialchars(trim($_POST['title']), ENT_QUOTES, 'UTF-8');
@@ -53,12 +41,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $author_id = $_SESSION['user_id'];
 
     if (empty($title) || empty($type)) {
-        die('Title and type are required!');
+        $_SESSION['error_message'] = "Title and type required";
+        $_SESSION['type'] = "error";  
+    
+        header('Location: dashboard.php');  
+        exit();
     }
 
     $file_path = null;
     if ($type === 'full' && isset($_FILES['file'])) {
-        // Controllo errori di upload
+       
         switch ($_FILES['file']['error']) {
             case UPLOAD_ERR_OK:
                 break;
@@ -66,89 +58,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             case UPLOAD_ERR_FORM_SIZE:
                 $log->warning('File is too large.', ['size' => $_FILES['file']['size']]);
                 $_SESSION['error_message'] = "File is too large. Maximum size is 2MB.";
-                $_SESSION['type'] = "error";  // Specifica che è un errore
+                $_SESSION['type'] = "error";  
             
-                header('Location: dashboard.php');  // Torna alla pagina di upload
+                header('Location: dashboard.php');  
                 exit();
             case UPLOAD_ERR_PARTIAL:
                 $log->warning('The file was only partially uploaded.');
                 $_SESSION['error_message'] = "The file was only partially uploaded.";
-                $_SESSION['type'] = "error";  // Specifica che è un errore
+                $_SESSION['type'] = "error";  
             
-                header('Location: dashboard.php');  // Torna alla pagina di upload
+                header('Location: dashboard.php');  
                 exit();
             case UPLOAD_ERR_NO_FILE:
                 $log->warning('No file was uploaded.');
                 $_SESSION['error_message'] = "No file was uploaded.";
-                $_SESSION['type'] = "error";  // Specifica che è un errore
+                $_SESSION['type'] = "error";  
             
-                header('Location: dashboard.php');  // Torna alla pagina di upload
+                header('Location: dashboard.php');  
                 exit();
             default:
                 $log->error('An unknown error occurred during file upload.');
                 $_SESSION['error_message'] = "An unknown error occurred during file upload..";
-                $_SESSION['type'] = "error";  // Specifica che è un errore
+                $_SESSION['type'] = "error";  
             
-                header('Location: dashboard.php');  // Torna alla pagina di upload
+                header('Location: dashboard.php'); 
                 exit();
         }
         
-        // **2️ Creazione sicura della cartella uploads**
         $upload_dir = __DIR__ . '/uploads/';
         if (!is_dir($upload_dir)) {
             if (!mkdir($upload_dir, 0755, true)) {
                 $log->error('Unable to create upload directory. Check permissions.');
-                die('Error: Unable to create upload directory. Check permissions.');
+                $_SESSION['error_message']='Unable to create upload directory. Check permissions';
+                $_SESSION['type'] = "error";  
+                header('Location: dashboard.php');  
+                exit();
             }
         }
 
-        // **3️ Verifica dell'estensione del file**
+        
         $allowed_extensions = ['pdf'];
         $file_ext = strtolower(pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION));
 
         if (!in_array($file_ext, $allowed_extensions)) {
             $log->warning('Invalid file extension.', ['extension' => $file_ext, 'ip' => $_SERVER['REMOTE_ADDR']]);
-            die('Invalid file extension. Only PDF files are allowed.');
+            $_SESSION['error_message']='Invalid file type. Only PDF files are allowed.';
+            $_SESSION['type'] = "error";  
+            header('Location: dashboard.php');  
+            exit();
         }
 
-        // **4️ Verifica del MIME Type**
+       
         $finfo = new finfo(FILEINFO_MIME_TYPE);
         $mime_type = $finfo->file($_FILES['file']['tmp_name']);
         $allowed_mime_types = ['application/pdf'];
 
         if (!in_array($mime_type, $allowed_mime_types)) {
             $log->warning('Invalid file type.', ['type' => $mime_type, 'ip' => $_SERVER['REMOTE_ADDR']]);
-            die('Invalid file type. Only PDF files are allowed.');
+            $_SESSION['error_message']='Invalid file type. Only PDF files are allowed.';
+            $_SESSION['type'] = "error"; 
+            header('Location: dashboard.php');  
+            exit();
         }
 
-        // **5️ Limitazione della dimensione del file (max 2MB)**
+       
         $max_size = 2 * 1024 * 1024; // 2MB
         if ($_FILES['file']['size'] > $max_size) {
             $log->warning('File is too large.', ['size' => $_FILES['file']['size']]);
         
             $_SESSION['error_message'] = "File is too large. Maximum size is 2MB.";
-            $_SESSION['type'] = "error";  // Specifica che è un errore
+            $_SESSION['type'] = "error";  
         
-            header('Location: upload.php');  // Torna alla pagina di upload
+            header('Location: dashboard.php');  
             exit();
         }
         
 
-        // **6️ Generazione di un nome file univoco**
         $file_name = uniqid() . '_' . basename($_FILES['file']['name']);
         $file_path = $upload_dir . $file_name;
 
-        // **7️ Spostamento sicuro del file**
         if (!move_uploaded_file($_FILES['file']['tmp_name'], $file_path)) {
             $log->error('File upload failed. Check folder permissions.');
-            die('File upload failed! Check folder permissions.');
+            $_SESSION['error_message'] = "File upload failed! Check folder permissions..";
+            $_SESSION['type'] = "error"; 
+            header('Location: dashboard.php');  
+            exit();
         }
 
-        // **8️ Convertiamo il percorso in relativo per evitare esposizione del filesystem**
         $file_path = 'uploads/' . $file_name;
     }
+    else if($type === 'short' && $content=== ""){
+        $_SESSION['error_message'] = "Empty Content.";
+        $_SESSION['type'] = "error"; 
+    
+        header('Location: dashboard.php');  
+        exit();
+    }
 
-    // **9️ Inserimento nel database**
     $stmt = $conn->prepare('INSERT INTO Novels (author_id, title, type, content, file_path, is_premium) VALUES (?, ?, ?, ?, ?, ?)');
     $stmt->bind_param('issssi', $author_id, $title, $type, $content, $file_path, $is_premium);
 
