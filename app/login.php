@@ -103,7 +103,6 @@ if ($stmt->num_rows > 0) {
     $stmt->bind_result($user_id, $db_username, $password_hash, $is_premium, $role, $is_verified, $trials, $unlocking_date,$password_changed_at);
     $stmt->fetch();
 
-    // Controlla se l'account è bloccato
     if (($trials % 3) === 0 && $unlocking_date!== NULL) {
         $current_date = new DateTime();
         $unlock_date = new DateTime($unlocking_date);
@@ -123,18 +122,14 @@ if ($stmt->num_rows > 0) {
 
     
  
-        // // Definiamo la durata massima della password in minuti (1 minuto per il test)
         // $max_password_age_minutes = 1;
 
-        // // Convertiamo la data di cambio password in un oggetto DateTime
         // $password_last_changed = new DateTime($password_changed_at);
         // $current_date = new DateTime();
 
-        // // Calcoliamo la differenza in minuti
         // $interval = $current_date->getTimestamp() - $password_last_changed->getTimestamp();
         // $interval_in_minutes = $interval / 60; // Converte i secondi in minuti
 
-        // // Se la password è più vecchia del limite massimo, reindirizza al cambio password
         // if ($interval_in_minutes > $max_password_age_minutes) {
         //     $_SESSION['force_password_reset'] = true; // Indica che il reset è obbligatorio
         //     unset($_SESSION['username']);
@@ -164,10 +159,8 @@ if ($stmt->num_rows > 0) {
         $update_stmt->bind_param('i', $user_id);
         $update_stmt->execute();
 
-        // Definiamo la durata massima della password in giorni (90 giorni)
         $max_password_age_days = 90;
 
-        // Convertiamo la data di cambio password in un oggetto DateTime
         if ($password_changed_at === NULL) {
             $password_last_changed = new DateTime(); // Use current time as default
         } else {
@@ -176,11 +169,9 @@ if ($stmt->num_rows > 0) {
     
         $current_date = new DateTime();
    
-        // Calcoliamo la differenza in giorni
         $interval = $current_date->diff($password_last_changed);
         $interval_in_days = $interval->days; // Restituisce la differenza in giorni
     
-        // Se la password è più vecchia del limite massimo, reindirizza al cambio password
         if ($interval_in_days > $max_password_age_days) {
             $_SESSION['force_password_reset'] = true; // Indica che il reset è obbligatorio
             unset($_SESSION['username']);

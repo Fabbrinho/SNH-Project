@@ -35,7 +35,7 @@ RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
 # Copy application files
 COPY ./app /var/www/html/
 
-# Creazione della cartella logs e impostazione dei permessi
+# Logs directory
 RUN mkdir -p /var/www/html/logs && \
     chown -R www-data:www-data /var/www/html/logs && \
     chmod -R 755 /var/www/html/logs

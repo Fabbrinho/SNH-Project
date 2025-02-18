@@ -18,7 +18,7 @@ function setErrorMessage($message, $type = "error") {
     $_SESSION['error_message'] = $message;
     $_SESSION['type'] = $type;
     $_SESSION['source'] = "REGISTER";
-    header('Location: index.php'); // Reindirizza l'utente alla pagina di login
+    header('Location: index.php'); 
     exit();
 }
 
